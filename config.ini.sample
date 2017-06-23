@@ -1,0 +1,15 @@
+[database]
+dbname = jitenshea
+user = dag
+host = localhost
+port = 5432
+# you can write it if necessary
+password
+
+[lyon]
+schema = lyon
+table = timeserie
+
+[bordeaux]
+schema = bordeaux
+table = timeserie
