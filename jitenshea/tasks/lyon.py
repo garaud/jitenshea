@@ -11,6 +11,7 @@ import os
 import json
 import zipfile
 from datetime import datetime as dt
+from datetime import date, timedelta
 
 import sh
 
@@ -23,7 +24,7 @@ from luigi.format import UTF8, MixedUnicodeBytes
 import pandas as pd
 
 from jitenshea import config
-from jitenshea.iodb import psql_args, shp2pgsql_args
+from jitenshea.iodb import db, psql_args, shp2pgsql_args
 
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
@@ -45,6 +46,11 @@ def params_factory(projection, output_format, dataname):
            "typename": dataname}
     res.update(DEFAULT_PARAMS)
     return res
+
+def yesterday():
+    """Return the day before today
+    """
+    return date.today() - timedelta(1)
 
 
 class ShapefilesTask(luigi.Task):
@@ -228,7 +234,8 @@ class VelovStationDatabase(luigi.postgres.CopyToTable):
     # user = 'tempus'
     user = config['database']['user']
     password = None
-    table = '{schema}.velov_timeserie'.format(schema=config['lyon']['schema'])
+    table = '{schema}.{tablename}'.format(schema=config['lyon']['schema'],
+                                          tablename=config['lyon']['table'])
 
     columns = [('number', 'INT'),
                ('last_update', 'TIMESTAMP'),
@@ -250,3 +257,32 @@ class VelovStationDatabase(luigi.postgres.CopyToTable):
 
     def requires(self):
         return VelovStationJSONtoCSV(self.timestamp)
+
+
+class AggregateTransaction(luigi.Task):
+    """Aggregate bicycle-share transactions data into a CSV file.
+    """
+    date = luigi.DateParameter(default=yesterday())
+    path = os.path.join(DATADIR, '{year}', '{month:02d}', '{day:02d}', 'transations.csv')
+
+    def output(self):
+        triple = lambda x: (x.year, x.month, x.day)
+        year, month, day = triple(self.date)
+        return luigi.LocalTarget(self.path.format(year=year, month=month, day=day), format=UTF8)
+
+    def run(self):
+        query = """SELECT DISTINCT * FROM {schema}.{tablename}
+          WHERE last_update >= %(start)s AND last_update < %(stop)s
+          ORDER BY last_update,number""".format(schema=config["lyon"]["schema"],
+                                                tablename=config['lyon']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng, params={"start": self.date,
+                                                          "stop": self.date + timedelta(1)})
+        transactions = (df.query("status == 'OPEN'")
+                        .groupby("number")['available_bikes']
+                        .apply(lambda s: s.diff().abs().sum())
+                        .dropna()
+                        .to_frame()
+                        .reset_index())
+        with self.output().open('w') as fobj:
+            transactions.to_csv(fobj, index=False)
