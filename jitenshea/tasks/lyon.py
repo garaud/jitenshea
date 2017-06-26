@@ -140,7 +140,7 @@ class ShapefileIntoDB(luigi.Task):
     source = luigi.Parameter(default="grandlyon")
     typename = luigi.Parameter()
     # table = luigi.Parameter()
-    schema = luigi.Parameter(default='lyon')
+    schema = luigi.Parameter(default=config['lyon']["schema"])
     projection = luigi.Parameter(default='4326')
 
     @property
