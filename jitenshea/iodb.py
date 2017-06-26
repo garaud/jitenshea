@@ -6,6 +6,8 @@
 import os
 import logging
 
+from sqlalchemy import create_engine
+
 from jitenshea import config
 
 
@@ -44,3 +46,19 @@ def shp2pgsql_args(projection, filename, tablename, encoding=None):
         shp2pgsql.extend(['-s', projection])
     shp2pgsql.extend([filename, tablename])
     return shp2pgsql
+
+def db():
+    """Return a SQLAlchemy engine with Postgres connection parameters
+    """
+    database = config['database']
+    if database.get('password') is not None:
+        url = 'postgresql://{user}:{password}@{host}/{dbname}'
+        return create_engine(url.format(user=database['user'],
+                                        password=database['password'],
+                                        host=database['host'],
+                                        dbname=database['dbname']))
+    else:
+        url = 'postgresql://{user}@{host}/{dbname}'
+        return create_engine(url.format(user=database['user'],
+                                        host=database['host'],
+                                        dbname=database['dbname']))
