@@ -24,8 +24,9 @@ from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 
 
-# To get shapefile (in a zip)
+# To get shapefile (in a zip). XXX Seems outdated
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
+BORDEAUX_STATION_URL_XML = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=TB_STVEL_P&SRSNAME=EPSG:3945'
 BORDEAUX_WFS = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_VCUB_P'
 DATADIR = 'datarepo/bordeaux'
 
@@ -144,6 +145,25 @@ class ShapefileIntoDB(luigi.Task):
             fobj.write("shp2pgsql {} at {}\n".format(shpfile, dt.now()))
             fobj.write("Create {schema}.{table}\n"
                        .format(schema=self.schema, table=self.table))
+
+class BicycleStationGeoXML(luigi.Task):
+    """The shapefile from the file.php service seems outdated.
+
+    Download the XML file before to dumpt it into the Database
+    """
+    filename = "vcub.xml"
+
+    def output(self):
+        return luigi.LocalTarget(os.path.join(DATADIR, self.filename), format=UTF8)
+
+    def run(self):
+        resp = requests.get(BORDEAUX_STATION_URL_XML.format(key=config['bordeaux']['key']))
+        with self.output().open('w') as fobj:
+            # Note: I hate ISO-8859-1!!
+            fobj.write(resp.content.decode('latin1')
+                       .encode('utf-8')
+                       .decode('utf-8')
+                       .replace("ISO-8859-1", "UTF-8"))
 
 
 class BicycleStationAvailability(luigi.Task):
