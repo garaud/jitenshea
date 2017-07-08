@@ -282,11 +282,11 @@ class BicycleStationDatabase(luigi.postgres.CopyToTable):
     columns = [('gid', 'INT'),
                ('ident', 'INT'),
                ('type', 'VARCHAR(5)'),
-               ('nom', 'VARCHAR(200)'),
-               ('etat', 'VARCHAR(20)'),
-               ('nbplaces', 'INT'),
-               ('nbvelos', 'INT'),
-               ('heure', 'TIMESTAMP')]
+               ('name', 'VARCHAR(200)'),
+               ('state', 'VARCHAR(12)'),
+               ('available_stand', 'INT'),
+               ('available_bike', 'INT'),
+               ('ts', 'TIMESTAMP')]
 
     def rows(self):
         """overload the rows method to skip the first line (header)
