@@ -36,8 +36,9 @@ from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 
 
-# To get shapefile (in a zip). XXX Seems outdated
+# To get shapefile (in a zip).
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
+# Same data as the shapefile but in XML
 BORDEAUX_STATION_URL_XML = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=TB_STVEL_P&SRSNAME=EPSG:3945'
 BORDEAUX_WFS = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_VCUB_P'
 DATADIR = 'datarepo/bordeaux'
@@ -60,6 +61,35 @@ def extract_xml_feature(node, namespace='{http://data.bordeaux-metropole.fr/wfs}
             ("nbplaces", int(get('NBPLACES'))),
             ("nbvelos", int(get("NBVELOS"))),
             ("heure", pd.Timestamp(get("HEURE")))]
+
+def collect_xml_station(fobj):
+    """Get bicycle stations from XML before inserted them into a Postgres table
+
+    Also get the Geometry Point(3945)
+    """
+    data = []
+    tree = etree.parse(fobj)
+    wfs_ns = '{http://www.opengis.net/wfs/2.0}'
+    bm_ns = '{http://data.bordeaux-metropole.fr/wfs}'
+    elements = (node.find(bm_ns + 'TB_STVEL_P') for node in tree.findall(wfs_ns + 'member'))
+    for element in elements:
+        # TODO Get the Geom Point
+        data.append((element.findtext(bm_ns + "GID"),
+                     element.findtext(bm_ns + "NUMSTAT"),
+                     element.findtext(bm_ns + "IDENT"),
+                     element.findtext(bm_ns + "ADRESSE"),
+                     element.findtext(bm_ns + "COMMUNE"),
+                     # element.findtext(bm_ns + "DATESERV"),
+                     element.findtext(bm_ns + "LIGNCORR"),
+                     element.findtext(bm_ns + "NBSUPPOR"),
+                     element.findtext(bm_ns + "NOM"),
+                     element.findtext(bm_ns + "TARIF"),
+                     element.findtext(bm_ns + "TERMBANC"),
+                     element.findtext(bm_ns + "TYPEA"),
+                     element.findtext(bm_ns + "GEOM"),
+                     element.findtext(bm_ns + "CDATE"),
+                     element.findtext(bm_ns + "MDATE")))
+    return data
 
 
 class ShapefilesTask(luigi.Task):
