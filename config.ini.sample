@@ -13,3 +13,6 @@ table = timeserie
 [bordeaux]
 schema = bordeaux
 table = timeserie
+# API Key
+# key = QHUHHRI7HD
+key = 3ZNLOXJS4R

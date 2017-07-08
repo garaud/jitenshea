@@ -284,5 +284,6 @@ class AggregateTransaction(luigi.Task):
                         .dropna()
                         .to_frame()
                         .reset_index())
+        transactions = transactions.rename_axis({"available_bikes": "transactions"}, axis=1)
         with self.output().open('w') as fobj:
             transactions.to_csv(fobj, index=False)
