@@ -298,3 +298,34 @@ class BicycleStationDatabase(luigi.postgres.CopyToTable):
 
     def requires(self):
         return BicycleStationXMLtoCSV(self.timestamp)
+
+
+class AggregateTransaction(luigi.Task):
+    """Aggregate bicycle-share transactions data into a CSV file.
+    """
+    date = luigi.DateParameter(default=yesterday())
+    path = os.path.join(DATADIR, '{year}', '{month:02d}', '{day:02d}', 'transations.csv')
+
+    def output(self):
+        triple = lambda x: (x.year, x.month, x.day)
+        year, month, day = triple(self.date)
+        return luigi.LocalTarget(self.path.format(year=year, month=month, day=day), format=UTF8)
+
+    def run(self):
+        query = """SELECT DISTINCT ident, type, state, available_bike, ts
+           FROM {schema}.{tablename}
+           WHERE ts >= %(start)s AND ts < %(stop)s
+           ORDER BY ident,ts;""".format(schema=config["bordeaux"]["schema"],
+                                        tablename=config['bordeaux']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng, params={"start": self.date,
+                                                          "stop": self.date + timedelta(1)})
+        transactions = (df.query("state == 'CONNECTEE'")
+                        .groupby("ident")['available_bike']
+                        .apply(lambda s: s.diff().abs().sum())
+                        .dropna()
+                        .to_frame()
+                        .reset_index())
+        transactions = transactions.rename_axis({"available_bike": "transactions"}, axis=1)
+        with self.output().open('w') as fobj:
+            transactions.to_csv(fobj, index=False)
