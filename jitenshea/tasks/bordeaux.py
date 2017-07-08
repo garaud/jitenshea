@@ -1,7 +1,19 @@
 # coding: utf-8
 
-"""Luigi tasks to retrieve and process data for Bordeaux
+"""Luigi tasks to retrieve and process data for Bordeaux.
+
+Note: the 'ident' field which should be used for an unique id for each station
+is different when you load the layer TB_STVEL_P and CI_VCUB_P.
+
+  - TB_STVEL_P: bicyle-station geoloc
+  - CI_VCUB_P: bicyle-station real-time occupation data
+
+So, if you want to merge these data, use the 'numstat' from TB_STVEL_P and
+'ident' from CI_VCUB_P.
+
+See also http://data.bordeaux-metropole.fr/dicopub/#/dico#CI_VCUB_P
 """
+
 
 import os
 import zipfile
