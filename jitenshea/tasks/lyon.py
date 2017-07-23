@@ -263,7 +263,7 @@ class AggregateTransaction(luigi.Task):
     """Aggregate bicycle-share transactions data into a CSV file.
     """
     date = luigi.DateParameter(default=yesterday())
-    path = os.path.join(DATADIR, '{year}', '{month:02d}', '{day:02d}', 'transations.csv')
+    path = os.path.join(DATADIR, '{year}', '{month:02d}', '{day:02d}', 'transactions.csv')
 
     def output(self):
         triple = lambda x: (x.year, x.month, x.day)
