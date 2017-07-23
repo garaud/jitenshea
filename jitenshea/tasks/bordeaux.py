@@ -274,7 +274,6 @@ class BicycleStationDatabase(luigi.postgres.CopyToTable):
 
     host = 'localhost'
     database = config['database']['dbname']
-    # user = 'tempus'
     user = config['database']['user']
     password = None
     table = '{schema}.{tablename}'.format(schema=config['bordeaux']['schema'],
@@ -329,3 +328,30 @@ class AggregateTransaction(luigi.Task):
         transactions = transactions.rename_axis({"available_bike": "transactions"}, axis=1)
         with self.output().open('w') as fobj:
             transactions.to_csv(fobj, index=False)
+
+
+class AggregateVCUBTransactionIntoDB(luigi.postgres.CopyToTable):
+    """Aggregate bicycle-share transactions data into the database.
+    """
+    date = luigi.DateParameter(default=yesterday())
+
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    table = '{schema}.{tablename}'.format(schema=config['bordeaux']['schema'],
+                                          tablename=config['bordeaux']['daily_transaction'])
+    columns = [('ident', 'INT'),
+               ('number', 'FLOAT'),
+               ('date', 'DATE')]
+
+    def rows(self):
+        """overload the rows method to skip the first line (header) and add date value
+        """
+        with self.input().open('r') as fobj:
+            next(fobj)
+            for line in fobj:
+                yield line.strip('\n').split(',') + [self.date]
+
+    def requires(self):
+        return AggregateTransaction(self.date)
