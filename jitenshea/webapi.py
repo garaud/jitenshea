@@ -25,7 +25,7 @@ def index():
 
 api = Api(app,
           title='Jitenshea: Bicycle-sharing data analysis',
-          # ui=False,
+          ui=False,
           version='0.1',
           description="Retrieve some data related to bicycle-sharing data from some cities.")
 
