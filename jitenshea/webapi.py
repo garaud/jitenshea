@@ -29,6 +29,12 @@ api = Api(app,
           version='0.1',
           description="Retrieve some data related to bicycle-sharing data from some cities.")
 
+# Parsers
+station_list_parser = api.parser()
+station_list_parser.add_argument("limit", required=False, default=20, dest='limit',
+                                 location='args', help='Limit')
+
+
 @app.route('/doc/')
 def swagger_ui():
     return apidoc.ui_for(api)
@@ -41,8 +47,12 @@ class City(Resource):
 
 @api.route("/lyon/station")
 class LyonStationList(Resource):
+    @api.doc(parser=station_list_parser,
+                 description="bicycle-sharing stations for Lyon")
     def get(self):
-        return controller.stations('lyon')
+        args = station_list_parser.parse_args()
+        limit = args['limit']
+        return controller.stations('lyon', limit)
 
 @api.route("/lyon/station/<int:id>")
 class LyonStation(Resource):
@@ -51,8 +61,12 @@ class LyonStation(Resource):
 
 @api.route("/bordeaux/station")
 class BordeauxStationList(Resource):
+    @api.doc(parser=station_list_parser,
+             description="bicycle-sharing stations for Bordeaux")
     def get(self):
-        return controller.stations('bordeaux')
+        args = station_list_parser.parse_args()
+        limit = args['limit']
+        return controller.stations('bordeaux', limit)
 
 @api.route("/bordeaux/station/<int:id>")
 class BordeauxStation(Resource):

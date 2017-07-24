@@ -31,13 +31,13 @@ def cities():
              'country': 'france',
              'stations': 174}]
 
-def stations(city):
+def stations(city, limit):
     """List of stations as dict
     """
     if city == 'bordeaux':
-        query = bordeaux_stations()
+        query = bordeaux_stations(limit)
     elif city == 'lyon':
-        query = lyon_stations()
+        query = lyon_stations(limit)
     else:
         raise ValueError("City {} not supported".format(city))
     eng = db()
@@ -45,21 +45,25 @@ def stations(city):
     keys = rset.keys()
     return [dict(zip(keys, row)) for row in rset]
 
-def bordeaux_stations():
+def bordeaux_stations(limit=20):
     return """SELECT numstat::int AS id
       ,nom AS name
       ,adresse AS address
       ,commune AS city
       ,nbsuppor::int AS nb_bikes
     FROM {schema}.vcub_station
-    """.format(schema=config['bordeaux']['schema'])
+    LIMIT {limit}
+    """.format(schema=config['bordeaux']['schema'],
+               limit=limit)
 
-def lyon_stations():
+def lyon_stations(limit=20):
     return """SELECT idstation::int AS id
       ,nom AS name
       ,adresse1 AS address
       ,commune AS city
       ,nbbornette::int AS nb_bikes
     FROM {schema}.pvostationvelov
-    """.format(schema=config['lyon']['schema'])
+    LIMIT {limit}
+    """.format(schema=config['lyon']['schema'],
+               limit=limit)
 
