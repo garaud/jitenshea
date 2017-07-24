@@ -18,6 +18,8 @@ logger = daiquiri.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['ERROR_404_HELP'] = False
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
+
 
 @app.route('/')
 def index():
@@ -48,7 +50,7 @@ class City(Resource):
 @api.route("/lyon/station")
 class LyonStationList(Resource):
     @api.doc(parser=station_list_parser,
-                 description="bicycle-sharing stations for Lyon")
+                 description="Bicycle-sharing stations for Lyon")
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
@@ -56,6 +58,7 @@ class LyonStationList(Resource):
 
 @api.route("/lyon/station/<int:id>")
 class LyonStation(Resource):
+    @api.doc(description="Bicycle station for Lyon")
     def get(self, id):
         rset = controller.lyon(id)
         if not rset:
@@ -65,7 +68,7 @@ class LyonStation(Resource):
 @api.route("/bordeaux/station")
 class BordeauxStationList(Resource):
     @api.doc(parser=station_list_parser,
-             description="bicycle-sharing stations for Bordeaux")
+             description="Bicycle-sharing stations for Bordeaux")
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
@@ -73,6 +76,7 @@ class BordeauxStationList(Resource):
 
 @api.route("/bordeaux/station/<int:id>")
 class BordeauxStation(Resource):
+    @api.doc(description="Bicycle station for Bordeaux")
     def get(self, id):
         rset = controller.bordeaux(id)
         if not rset:
