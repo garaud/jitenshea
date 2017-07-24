@@ -32,7 +32,12 @@ def cities():
              'stations': 174}]
 
 def stations(city, limit):
-    """List of stations as dict
+    """List of bicycle stations
+
+    city: string
+    limit: int
+
+    Return a list of dict, one dict by bicycle station
     """
     if city == 'bordeaux':
         query = bordeaux_stations(limit)
@@ -46,6 +51,13 @@ def stations(city, limit):
     return [dict(zip(keys, row)) for row in rset]
 
 def bordeaux_stations(limit=20):
+    """Query for the list of bicycle stations in Bordeaux
+
+    limit: int
+       default 20
+
+    Return a SQL query to execute
+    """
     return """SELECT numstat::int AS id
       ,nom AS name
       ,adresse AS address
@@ -57,6 +69,13 @@ def bordeaux_stations(limit=20):
                limit=limit)
 
 def lyon_stations(limit=20):
+    """Query for the list of bicycle stations in Lyon
+
+    limit: int
+       default 20
+
+    Return a SQL query to execute
+    """
     return """SELECT idstation::int AS id
       ,nom AS name
       ,adresse1 AS address
