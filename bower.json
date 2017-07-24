@@ -1,0 +1,25 @@
+{
+  "name": "jitenshea",
+  "version": "0.1.0",
+  "authors": [
+    "Damien Garaud <damien.garaud@oslandia.com>"
+  ],
+  "description": "Bicycle-sharing data analysis",
+  "keywords": [
+    "bicycle",
+    "GIS",
+    "data"
+  ],
+  "license": "BSD",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "./jitenshea/static/bower/",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.6"
+  }
+}
