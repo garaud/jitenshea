@@ -95,8 +95,10 @@ def bordeaux(station_id):
     """
     query = bordeaux_stations(1).replace("LIMIT 1", 'WHERE numstat=%s')
     eng = db()
-    rset = eng.execute(query, [str(station_id)])
-    return dict(zip(rset.keys(), rset.fetchone()))
+    rset = eng.execute(query, [str(station_id)]).fetchone()
+    if not rset:
+        return {}
+    return dict(zip(rset.keys(), rset))
 
 def lyon(station_id):
     """Get a specific bicycle-sharing station for Lyon
@@ -107,5 +109,7 @@ def lyon(station_id):
     """
     query = lyon_stations(1).replace("LIMIT 1", 'WHERE idstation=%s')
     eng = db()
-    rset = eng.execute(query, [str(station_id)])
-    return dict(zip(rset.keys(), rset.fetchone()))
+    rset = eng.execute(query, [str(station_id)]).fetchone()
+    if not rset:
+        return {}
+    return dict(zip(rset.keys(), rset))
