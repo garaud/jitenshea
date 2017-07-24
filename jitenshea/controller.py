@@ -86,3 +86,26 @@ def lyon_stations(limit=20):
     """.format(schema=config['lyon']['schema'],
                limit=limit)
 
+def bordeaux(station_id):
+    """Get a specific bicycle-sharing station for Bordeaux
+    station_id: int
+       Id of the bicycle-sharing station
+
+    Return a bicycle station in a dict
+    """
+    query = bordeaux_stations(1).replace("LIMIT 1", 'WHERE numstat=%s')
+    eng = db()
+    rset = eng.execute(query, [str(station_id)])
+    return dict(zip(rset.keys(), rset.fetchone()))
+
+def lyon(station_id):
+    """Get a specific bicycle-sharing station for Lyon
+    station_id: int
+       Id of the bicycle-sharing station
+
+    Return a bicycle station in a dict
+    """
+    query = lyon_stations(1).replace("LIMIT 1", 'WHERE idstation=%s')
+    eng = db()
+    rset = eng.execute(query, [str(station_id)])
+    return dict(zip(rset.keys(), rset.fetchone()))
