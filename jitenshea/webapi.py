@@ -17,7 +17,7 @@ logger = daiquiri.getLogger(__name__)
 
 
 app = Flask(__name__)
-
+app.config['ERROR_404_HELP'] = False
 
 @app.route('/')
 def index():
