@@ -57,7 +57,10 @@ class LyonStationList(Resource):
 @api.route("/lyon/station/<int:id>")
 class LyonStation(Resource):
     def get(self, id):
-        return {"id": id}
+        rset = controller.lyon(id)
+        if not rset:
+            api.abort(404, "No such id: {}".format(id))
+        return rset
 
 @api.route("/bordeaux/station")
 class BordeauxStationList(Resource):
@@ -71,7 +74,11 @@ class BordeauxStationList(Resource):
 @api.route("/bordeaux/station/<int:id>")
 class BordeauxStation(Resource):
     def get(self, id):
-        return {"id": id}
+        rset = controller.bordeaux(id)
+        if not rset:
+            api.abort(404, "No such id: {}".format(id))
+        return rset
+
 
 if __name__ == '__main__':
     app.run(debug=True)
