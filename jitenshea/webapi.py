@@ -8,7 +8,7 @@ import logging
 
 from flask import Flask, jsonify, render_template
 from flask_restplus import fields
-from flask.ext.restplus import Resource, Api, apidoc
+from flask_restplus import Resource, Api, apidoc
 
 from jitenshea import controller
 
