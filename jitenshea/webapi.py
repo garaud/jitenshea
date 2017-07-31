@@ -13,7 +13,7 @@ from flask_restplus import Resource, Api, apidoc
 from jitenshea import controller
 
 daiquiri.setup(level=logging.INFO)
-logger = daiquiri.getLogger(__name__)
+logger = daiquiri.getLogger("jitenshea")
 
 
 app = Flask(__name__)
@@ -82,6 +82,20 @@ class BordeauxStation(Resource):
         if not rset:
             api.abort(404, "No such id: {}".format(id))
         return rset
+
+# URL timeseries/?start=2017-07-21&stop=2017-07-23&limit=10
+
+# série temporelle pour une station
+# série temporelle pour une liste de stations ?
+# série temporelle entre deux dates, pour une date
+# série temporelle entre deux timestamps ??
+# daily transaction pour une station, pour plusieurs, triées dans l'ordre décroissant ?
+
+@api.route("/bordeaux/timeseries/<int:year>/<int:month>/<int:day>")
+class DailyBordeauxTimeseries(Resource):
+    @api.doc(description="One-day timeseries bicycle station for Bordeaux")
+    def get(self, year, month, day):
+        return []
 
 
 if __name__ == '__main__':
