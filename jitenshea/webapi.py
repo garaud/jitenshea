@@ -6,6 +6,8 @@
 import daiquiri
 import logging
 
+from werkzeug.routing import BaseConverter
+
 from flask import Flask, jsonify, render_template
 from flask_restplus import fields
 from flask_restplus import Resource, Api, apidoc
@@ -20,6 +22,21 @@ app = Flask(__name__)
 app.config['ERROR_404_HELP'] = False
 app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 
+
+class ListConverter(BaseConverter):
+    """URL <-> Python converter for a list of elements seperated by a ','
+
+    Example URL/user/john,mary to get the john resource and mary resource
+    Inspired from http://exploreflask.com/en/latest/views.html#custom-converters
+    """
+    def to_python(self, value):
+        return value.split(',')
+
+    def to_url(self, values):
+        return ','.join(BaseConverter.to_url(value)
+                        for value in values)
+
+app.url_map.converters['list'] = ListConverter
 
 @app.route('/')
 def index():
