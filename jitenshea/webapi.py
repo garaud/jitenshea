@@ -73,13 +73,13 @@ class LyonStationList(Resource):
         limit = args['limit']
         return controller.stations('lyon', limit)
 
-@api.route("/lyon/station/<int:id>")
+@api.route("/lyon/station/<list:ids>")
 class LyonStation(Resource):
-    @api.doc(description="Bicycle station for Lyon")
-    def get(self, id):
-        rset = controller.lyon(id)
+    @api.doc(description="Bicycle station(s) for Lyon")
+    def get(self, ids):
+        rset = controller.lyon(ids)
         if not rset:
-            api.abort(404, "No such id: {}".format(id))
+            api.abort(404, "No such id: {}".format(ids))
         return rset
 
 @api.route("/bordeaux/station")
@@ -91,13 +91,13 @@ class BordeauxStationList(Resource):
         limit = args['limit']
         return controller.stations('bordeaux', limit)
 
-@api.route("/bordeaux/station/<int:id>")
+@api.route("/bordeaux/station/<list:ids>")
 class BordeauxStation(Resource):
-    @api.doc(description="Bicycle station for Bordeaux")
-    def get(self, id):
-        rset = controller.bordeaux(id)
+    @api.doc(description="Bicycle station(s) for Bordeaux")
+    def get(self, ids):
+        rset = controller.bordeaux(ids)
         if not rset:
-            api.abort(404, "No such id: {}".format(id))
+            api.abort(404, "No such id: {}".format(ids))
         return rset
 
 # URL timeseries/?start=2017-07-21&stop=2017-07-23&limit=10
