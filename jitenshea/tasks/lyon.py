@@ -252,7 +252,7 @@ class VelovStationDatabase(luigi.postgres.CopyToTable):
         with self.input().open('r') as fobj:
             df = pd.read_csv(fobj)
             for idx, row in df.iterrows():
-                if row.status is None or row.available_bike_stands is None:
+                if row.status == 'None' or row.available_bike_stands == 'None':
                     continue
                 yield row.values
 
