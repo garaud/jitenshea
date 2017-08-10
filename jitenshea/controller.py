@@ -86,30 +86,30 @@ def lyon_stations(limit=20):
     """.format(schema=config['lyon']['schema'],
                limit=limit)
 
-def bordeaux(station_id):
-    """Get a specific bicycle-sharing station for Bordeaux
-    station_id: int
-       Id of the bicycle-sharing station
+def bordeaux(station_ids):
+    """Get some specific bicycle-sharing stations for Bordeaux
+    station_id: list of int
+       Ids of the bicycle-sharing station
 
-    Return a bicycle station in a dict
+    Return bicycle stations in a list of dict
     """
-    query = bordeaux_stations(1).replace("LIMIT 1", 'WHERE numstat=%s')
+    query = bordeaux_stations(1).replace("LIMIT 1", 'WHERE numstat IN %(id_list)s')
     eng = db()
-    rset = eng.execute(query, [str(station_id)]).fetchone()
+    rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
     if not rset:
         return {}
-    return dict(zip(rset.keys(), rset))
+    return [dict(zip(x.keys(), x)) for x in rset]
 
-def lyon(station_id):
-    """Get a specific bicycle-sharing station for Lyon
-    station_id: int
-       Id of the bicycle-sharing station
+def lyon(station_ids):
+    """Get some specific bicycle-sharing stations for Lyon
+    station_id: list of ints
+       Ids of the bicycle-sharing stations
 
-    Return a bicycle station in a dict
+    Return bicycle stations in a list of dict
     """
-    query = lyon_stations(1).replace("LIMIT 1", 'WHERE idstation=%s')
+    query = lyon_stations(1).replace("LIMIT 1", 'WHERE idstation IN %(id_list)s')
     eng = db()
-    rset = eng.execute(query, [str(station_id)]).fetchone()
+    rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
     if not rset:
-        return {}
-    return dict(zip(rset.keys(), rset))
+        return []
+    return [dict(zip(x.keys(), x)) for x in rset]
