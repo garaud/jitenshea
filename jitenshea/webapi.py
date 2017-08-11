@@ -59,6 +59,17 @@ app.url_map.converters['list'] = ListConverter
 app.json_encoder = CustomJSONEncoder
 
 
+def parse_date(strdate):
+    """Parse a string and convert it to a date
+    """
+    try:
+        year, month, day = [int(x) for x in strdate.split('-')]
+        day = date(year, month, day)
+    except Exception as e:
+        api.abort(422, "date from the request cannot be parsed: {}".format(e))
+    return day
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -73,6 +84,13 @@ api = Api(app,
 station_list_parser = api.parser()
 station_list_parser.add_argument("limit", required=False, default=20, dest='limit',
                                  location='args', help='Limit')
+daily_parser = api.parser()
+daily_parser.add_argument("date", required=True, dest="date", location="args",
+                          help="day of the transactions")
+daily_parser.add_argument("window", required=False, type=int, default=0, dest="window",
+                          location="args", help="How many days?")
+daily_parser.add_argument("backward", required=False, type=inputs.boolean, default=True, dest="backward",
+                          location="args", help="Backward window of days or not?")
 
 
 @app.route('/doc/')
@@ -119,7 +137,35 @@ class BordeauxStation(Resource):
         rset = controller.bordeaux(ids)
         if not rset:
             api.abort(404, "No such id: {}".format(ids))
-        return rset
+        return jsonify(rset)
+
+@api.route("/bordeaux/daily/station/<list:ids>")
+class BordeauxDailyStation(Resource):
+    @api.doc(parser=daily_parser,
+             description="Bicycle station(s) daily transactions for Bordeaux")
+    def get(self, ids):
+        args = daily_parser.parse_args()
+        day = parse_date(args['date'])
+        rset = controller.daily_transaction('bordeaux', ids, day,
+                                            args['window'], args['backward'])
+        if not rset:
+            api.abort(404, "No such id: {}".format(ids))
+        return jsonify(rset)
+
+@api.route("/lyon/daily/station/<list:ids>")
+class LyonDailyStation(Resource):
+    @api.doc(parser=daily_parser,
+             description="Bicycle station(s) daily transactions for Lyon")
+    def get(self, ids):
+        args = daily_parser.parse_args()
+        day = parse_date(args['date'])
+        rset = controller.daily_transaction('lyon', ids, day, args['window'],
+                                            args['backward'])
+        if not rset:
+            api.abort(404, "No such id: {}".format(ids))
+        return jsonify(rset)
+
+
 
 # URL timeseries/?start=2017-07-21&stop=2017-07-23&limit=10
 
