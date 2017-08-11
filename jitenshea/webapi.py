@@ -6,13 +6,18 @@
 import daiquiri
 import logging
 
+from datetime import date
+
 from werkzeug.routing import BaseConverter
 
 from flask import Flask, jsonify, render_template
-from flask_restplus import fields
+from flask.json import JSONEncoder
+from flask_restplus import fields, inputs
 from flask_restplus import Resource, Api, apidoc
 
 from jitenshea import controller
+
+ISO_DATE = '%Y-%m-%d'
 
 daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea")
@@ -21,6 +26,20 @@ logger = daiquiri.getLogger("jitenshea")
 app = Flask(__name__)
 app.config['ERROR_404_HELP'] = False
 app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
+
+class CustomJSONEncoder(JSONEncoder):
+    """Custom JSON encoder to handle date
+    """
+    def default(self, obj):
+        try:
+            if isinstance(obj, date):
+                return obj.strftime(ISO_DATE)
+            iterable = iter(obj)
+        except TypeError:
+            pass
+        else:
+            return list(iterable)
+        return JSONEncoder.default(self, obj)
 
 
 class ListConverter(BaseConverter):
@@ -37,6 +56,8 @@ class ListConverter(BaseConverter):
                         for value in values)
 
 app.url_map.converters['list'] = ListConverter
+app.json_encoder = CustomJSONEncoder
+
 
 @app.route('/')
 def index():
