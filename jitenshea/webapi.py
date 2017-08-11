@@ -83,7 +83,7 @@ def swagger_ui():
 class City(Resource):
     @api.doc("List of cities")
     def get(self):
-        return controller.cities()
+        return jsonify(controller.cities())
 
 @api.route("/lyon/station")
 class LyonStationList(Resource):
@@ -92,7 +92,7 @@ class LyonStationList(Resource):
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
-        return controller.stations('lyon', limit)
+        return jsonify(controller.stations('lyon', limit))
 
 @api.route("/lyon/station/<list:ids>")
 class LyonStation(Resource):
@@ -101,7 +101,7 @@ class LyonStation(Resource):
         rset = controller.lyon(ids)
         if not rset:
             api.abort(404, "No such id: {}".format(ids))
-        return rset
+        return jsonify(rset)
 
 @api.route("/bordeaux/station")
 class BordeauxStationList(Resource):
@@ -110,7 +110,7 @@ class BordeauxStationList(Resource):
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
-        return controller.stations('bordeaux', limit)
+        return jsonify(controller.stations('bordeaux', limit))
 
 @api.route("/bordeaux/station/<list:ids>")
 class BordeauxStation(Resource):
