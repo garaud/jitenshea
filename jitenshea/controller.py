@@ -9,6 +9,7 @@ import logging
 
 from itertools import groupby
 from datetime import timedelta
+from collections import namedtuple
 
 from jitenshea import config
 from jitenshea.iodb import db
@@ -19,7 +20,54 @@ logger = daiquiri.getLogger(__name__)
 
 CITIES = ('bordeaux',
           'lyon')
+TimeWindow = namedtuple('TimeWindow', ['start', 'stop', 'order_reference_date'])
 
+
+def processing_daily_data(rset, window):
+    """Re arrange when it's necessary the daily transactions data
+
+    rset: ResultProxy by SQLAlchemy
+        Result of a SQL query
+
+    Return a list of dicts
+    """
+    if not rset:
+        return []
+    data = [dict(zip(x.keys(), x)) for x in rset]
+    if window == 0:
+        return data
+    # re-arrange the result set to get a list of values for the keys 'date' and 'value'
+    values = []
+    for k, group in groupby(data, lambda x: x['id']):
+        group = list(group)
+        values.append({'id': k,
+                       "date": [x['date'] for x in group],
+                       'value': [x['value'] for x in group]})
+    return values
+
+def time_window(day, window, backward):
+    """Return a TimeWindow
+
+    Give a start and stop according to the size of the window and the backward
+    parameter. The order_reference_date is used to fix the values date to sort
+    station by values.
+
+    day: date
+       Start or stop according to the backward parameter
+    window: int
+       Number of day before (resp. after) the 'day' parameter
+    backward: boolean
+
+    Return TimeWindow
+    """
+    stop = day
+    sign = 1 if backward else -1
+    start = stop - timedelta(sign * window)
+    order_reference_date = stop
+    if not backward:
+        start, stop = stop, start
+        order_reference_date = start
+    return TimeWindow(start, stop, order_reference_date)
 
 def cities():
     "List of cities"
@@ -172,29 +220,14 @@ def daily_transaction(city, station_ids, day, window=0, backward=True):
 
     Return a list of dicts
     """
-    stop = day
-    sign = 1 if backward else -1
-    start = stop - timedelta(sign * window)
-    if not backward:
-        start, stop = stop, start
+    window = time_window(day, window, backward)
     query = daily_query(city)
     eng = db()
     rset = eng.execute(query,
                        id_list=tuple(str(x) for x in station_ids),
-                       start=start, stop=stop).fetchall()
-    if not rset:
-        return []
-    data = [dict(zip(x.keys(), x)) for x in rset]
-    if window == 0:
-        return data
-    # re-arrange the result set to get a list of values for the keys 'date' and 'value'
-    values = []
-    for k, group in groupby(data, lambda x: x['id']):
-        group = list(group)
-        values.append({'id': k,
-                       "date": [x['date'] for x in group],
-                       'value': [x['value'] for x in group]})
-    return values
+                       start=window.start, stop=window.stop).fetchall()
+    return processing_daily_data(rset, window)
+
 
 def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
     """Retrieve the daily transaction for the Bordeaux stations
@@ -211,27 +244,10 @@ def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
 
     Return a list of dicts
     """
-    stop = day
-    sign = 1 if backward else -1
-    start = stop - timedelta(sign * window)
-    order_reference_date = stop
-    if not backward:
-        start, stop = stop, start
-        order_reference_date = start
+    window = time_window(day, window, backward)
     query = daily_query_stations(city, limit, order_by)
     eng = db()
-    rset = eng.execute(query, start=start, stop=stop,
-                       order_reference_date=order_reference_date).fetchall()
-    if not rset:
-        return []
-    data = [dict(zip(x.keys(), x)) for x in rset]
-    if window == 0:
-        return data
-    # re-arrange the result set to get a list of values for the keys 'date' and 'value'
-    values = []
-    for k, group in groupby(data, lambda x: x['id']):
-        group = list(group)
-        values.append({'id': k,
-                       "date": [x['date'] for x in group],
-                       'value': [x['value'] for x in group]})
-    return values
+    rset = eng.execute(query, start=window.start, stop=window.stop,
+                       order_reference_date=window.order_reference_date).fetchall()
+    return processing_daily_data(rset, window)
+
