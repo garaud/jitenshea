@@ -149,7 +149,7 @@ class BordeauxDailyStation(Resource):
         rset = controller.daily_transaction('bordeaux', ids, day,
                                             args['window'], args['backward'])
         if not rset:
-            api.abort(404, "No such id: {}".format(ids))
+            api.abort(404, "No such data for id: {} at {}".format(ids, day))
         return jsonify(rset)
 
 @api.route("/lyon/daily/station/<list:ids>")
@@ -162,7 +162,7 @@ class LyonDailyStation(Resource):
         rset = controller.daily_transaction('lyon', ids, day, args['window'],
                                             args['backward'])
         if not rset:
-            api.abort(404, "No such id: {}".format(ids))
+            api.abort(404, "No such data for id: {} at {}".format(ids, day))
         return jsonify(rset)
 
 
