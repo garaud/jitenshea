@@ -130,7 +130,32 @@ def daily_query(city):
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
         ORDER BY id,date""".format(schema=config[city]['schema'])
 
-    raise ValueError("City '{}' not supported.".format(city))
+def daily_query_stations(city, limit, order_by='station'):
+    """SQL query to get daily transactions for all stations
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    if order_by == 'station':
+        order_by = 'id'
+    if order_by == 'value':
+        order_by = 'number DESC'
+    return """WITH station AS (
+            SELECT id
+              ,row_number() over (partition by null order by {order_by}) AS rank
+            FROM {schema}.daily_transaction
+            WHERE date = %(order_reference_date)s
+            ORDER BY {order_by}
+            LIMIT {limit}
+            )
+        SELECT S.id
+          ,D.number AS value
+          ,D.date
+        FROM station AS S
+        LEFT JOIN {schema}.daily_transaction AS D ON (S.id=D.id)
+        WHERE D.date >= %(start)s AND D.date <= %(stop)s
+        ORDER BY S.rank,D.date;""".format(schema=config[city]['schema'],
+                                          order_by=order_by,
+                                          limit=limit)
 
 
 def daily_transaction(city, station_ids, day, window=0, backward=True):
@@ -171,3 +196,42 @@ def daily_transaction(city, station_ids, day, window=0, backward=True):
                        'value': [x['value'] for x in group]})
     return values
 
+def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
+    """Retrieve the daily transaction for the Bordeaux stations
+
+    city: str
+    day: date
+        Data for this specific date
+    limit: int
+    order_by: str
+    window: int (0 by default)
+        Number of days to look around the specific date
+    backward: bool (True by default)
+        Get data before the date or not, according to the window number
+
+    Return a list of dicts
+    """
+    stop = day
+    sign = 1 if backward else -1
+    start = stop - timedelta(sign * window)
+    order_reference_date = stop
+    if not backward:
+        start, stop = stop, start
+        order_reference_date = start
+    query = daily_query_stations(city, limit, order_by)
+    eng = db()
+    rset = eng.execute(query, start=start, stop=stop,
+                       order_reference_date=order_reference_date).fetchall()
+    if not rset:
+        return []
+    data = [dict(zip(x.keys(), x)) for x in rset]
+    if window == 0:
+        return data
+    # re-arrange the result set to get a list of values for the keys 'date' and 'value'
+    values = []
+    for k, group in groupby(data, lambda x: x['id']):
+        group = list(group)
+        values.append({'id': k,
+                       "date": [x['date'] for x in group],
+                       'value': [x['value'] for x in group]})
+    return values
