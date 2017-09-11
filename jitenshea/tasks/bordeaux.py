@@ -341,7 +341,7 @@ class AggregateVCUBTransactionIntoDB(luigi.postgres.CopyToTable):
     password = None
     table = '{schema}.{tablename}'.format(schema=config['bordeaux']['schema'],
                                           tablename=config['bordeaux']['daily_transaction'])
-    columns = [('ident', 'INT'),
+    columns = [('id', 'INT'),
                ('number', 'FLOAT'),
                ('date', 'DATE')]
 
