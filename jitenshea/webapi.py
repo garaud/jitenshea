@@ -92,6 +92,19 @@ daily_parser.add_argument("window", required=False, type=int, default=0, dest="w
 daily_parser.add_argument("backward", required=False, type=inputs.boolean, default=True, dest="backward",
                           location="args", help="Backward window of days or not?")
 
+daily_list_parser = api.parser()
+daily_list_parser.add_argument("limit", required=False, default=20, dest='limit',
+                               location='args', help='Limit')
+daily_list_parser.add_argument("by", required=False, dest='order_by', default='station',
+                               location='args', help="Order by 'station' or 'value'")
+daily_list_parser.add_argument("date", required=True, dest="date", location="args",
+                               help="day of the transactions")
+daily_list_parser.add_argument("window", required=False, type=int, default=0,
+                               dest="window", location="args", help="How many days?")
+daily_list_parser.add_argument("backward", required=False, type=inputs.boolean,
+                               default=True, dest="backward", location="args",
+                               help="Backward window of days or not?")
+
 
 @app.route('/doc/')
 def swagger_ui():
@@ -166,6 +179,36 @@ class LyonDailyStation(Resource):
         return jsonify(rset)
 
 
+@api.route("/bordeaux/daily/station")
+class BordeauxDailyStationList(Resource):
+    @api.doc(parser=daily_list_parser,
+             description="Daily transactions for all stations in Bordeaux")
+    def get(self):
+        args = daily_list_parser.parse_args()
+        day = parse_date(args['date'])
+        limit = args['limit']
+        order_by = args['order_by']
+        if order_by not in ('station', 'value'):
+            api.abort(400, "wrong 'by' value parameter. Should be 'station' of 'value'")
+        rset = controller.daily_transaction_list('bordeaux', day, limit, order_by,
+                                                 args['window'], args['backward'])
+        return jsonify(rset)
+
+@api.route("/lyon/daily/station")
+class BordeauxDailyStationList(Resource):
+    @api.doc(parser=daily_list_parser,
+             description="Daily transactions for all stations in Lyon")
+    def get(self):
+        args = daily_list_parser.parse_args()
+        day = parse_date(args['date'])
+        limit = args['limit']
+        order_by = args['order_by']
+        if order_by not in ('station', 'value'):
+            api.abort(400, "wrong 'by' value parameter. Should be 'station' of 'value'")
+        rset = controller.daily_transaction_list('lyon', day, limit, order_by,
+                                                 args['window'], args['backward'])
+        return jsonify(rset)
+
 
 # URL timeseries/?start=2017-07-21&stop=2017-07-23&limit=10
 
@@ -175,11 +218,11 @@ class LyonDailyStation(Resource):
 # série temporelle entre deux timestamps ??
 # daily transaction pour une station, pour plusieurs, triées dans l'ordre décroissant ?
 
-@api.route("/bordeaux/timeseries/<int:year>/<int:month>/<int:day>")
-class DailyBordeauxTimeseries(Resource):
-    @api.doc(description="One-day timeseries bicycle station for Bordeaux")
-    def get(self, year, month, day):
-        return []
+# @api.route("/bordeaux/timeseries/<int:year>/<int:month>/<int:day>")
+# class DailyBordeauxTimeseries(Resource):
+#     @api.doc(description="One-day timeseries bicycle station for Bordeaux")
+#     def get(self, year, month, day):
+#         return []
 
 
 if __name__ == '__main__':
