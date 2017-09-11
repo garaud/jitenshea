@@ -121,22 +121,14 @@ def lyon(station_ids):
 def daily_query(city):
     """SQL query to get daily transactions according to the city
     """
-    if city == 'bordeaux':
-        return """SELECT ident AS id
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    return """SELECT id
            ,number AS value
            ,date
-        FROM {schema}.daily_transaction
-        WHERE ident IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
-        ORDER BY ident,date
-        """.format(schema=config['bordeaux']['schema'])
-    if city == 'lyon':
-        return """SELECT id
-           ,date
-           ,number AS value
         FROM {schema}.daily_transaction
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
-        ORDER BY id,date
-        """.format(schema=config['lyon']['schema'])
+        ORDER BY id,date""".format(schema=config[city]['schema'])
 
     raise ValueError("City '{}' not supported.".format(city))
 
