@@ -45,6 +45,25 @@ def processing_daily_data(rset, window):
                        'value': [x['value'] for x in group]})
     return values
 
+def processing_timeseries(rset):
+    """Processing the result of a timeseries SQL query
+
+    Return a list of dicts
+    """
+    if not rset:
+        return []
+    data = [dict(zip(x.keys(), x)) for x in rset]
+    values = []
+    for k, group in groupby(data, lambda x: x['id']):
+        group = list(group)
+        values.append({'id': k,
+                       'name': group[0]['name'],
+                       "ts": [x['ts'] for x in group],
+                       'available_bike': [x['available_bike'] for x in group],
+                       'available_stand': [x['available_stand'] for x in group]})
+    return values
+
+
 def time_window(day, window, backward):
     """Return a TimeWindow
 
@@ -251,3 +270,14 @@ def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
                        order_reference_date=window.order_reference_date).fetchall()
     return processing_daily_data(rset, window)
 
+def timeseries(city, station_ids, start, stop):
+    """Get timeseries data between two dates for a specific city and a list of station ids
+    """
+    query = """SELECT *
+    FROM {schema}.timeserie_norm
+    WHERE id IN %(id_list)s AND ts >= %(start)s AND ts < %(stop)s
+    """.format(schema=config[city]['schema'])
+    eng = db()
+    rset = eng.execute(query, id_list=tuple(x for x in station_ids),
+                       start=start, stop=stop)
+    return processing_timeseries(rset)
