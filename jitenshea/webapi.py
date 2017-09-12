@@ -123,6 +123,12 @@ daily_list_parser.add_argument("backward", required=False, type=inputs.boolean,
                                default=True, dest="backward", location="args",
                                help="Backward window of days or not?")
 
+timeseries_parser = api.parser()
+timeseries_parser.add_argument("start", required=True, dest="start", location="args",
+                          help="Start date YYYY-MM-DDThhmm")
+timeseries_parser.add_argument("stop", required=True, dest="stop", location="args",
+                          help="Stop date YYYY-MM-DDThhmm")
+
 
 @app.route('/doc/')
 def swagger_ui():
@@ -228,19 +234,32 @@ class BordeauxDailyStationList(Resource):
         return jsonify(rset)
 
 
-# URL timeseries/?start=2017-07-21&stop=2017-07-23&limit=10
+@api.route("/bordeaux/timeseries/station/<list:ids>")
+class BordeauxDailyStation(Resource):
+    @api.doc(parser=timeseries_parser,
+             description="Bicycle station(s) timeseries for Bordeaux")
+    def get(self, ids):
+        args = timeseries_parser.parse_args()
+        start = parse_timestamp(args['start'])
+        stop = parse_timestamp(args['stop'])
+        rset = controller.timeseries('bordeaux', ids, start, stop)
+        if not rset:
+            api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
+        return jsonify(rset)
 
-# série temporelle pour une station
-# série temporelle pour une liste de stations ?
-# série temporelle entre deux dates, pour une date
-# série temporelle entre deux timestamps ??
-# daily transaction pour une station, pour plusieurs, triées dans l'ordre décroissant ?
 
-# @api.route("/bordeaux/timeseries/<int:year>/<int:month>/<int:day>")
-# class DailyBordeauxTimeseries(Resource):
-#     @api.doc(description="One-day timeseries bicycle station for Bordeaux")
-#     def get(self, year, month, day):
-#         return []
+@api.route("/lyon/timeseries/station/<list:ids>")
+class BordeauxDailyStation(Resource):
+    @api.doc(parser=timeseries_parser,
+             description="Bicycle station(s) timeseries for Lyon")
+    def get(self, ids):
+        args = timeseries_parser.parse_args()
+        start = parse_timestamp(args['start'])
+        stop = parse_timestamp(args['stop'])
+        rset = controller.timeseries('lyon', ids, start, stop)
+        if not rset:
+            api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
+        return jsonify(rset)
 
 
 if __name__ == '__main__':
