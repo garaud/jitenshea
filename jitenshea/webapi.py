@@ -6,7 +6,8 @@
 import daiquiri
 import logging
 
-from datetime import date
+from datetime import date, datetime
+from dateutil.parser import parse
 
 from werkzeug.routing import BaseConverter
 
@@ -18,6 +19,7 @@ from flask_restplus import Resource, Api, apidoc
 from jitenshea import controller
 
 ISO_DATE = '%Y-%m-%d'
+ISO_DATETIME = '%Y-%m-%dT%H:%M:%S'
 
 daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea")
@@ -32,6 +34,8 @@ class CustomJSONEncoder(JSONEncoder):
     """
     def default(self, obj):
         try:
+            if isinstance(obj, datetime):
+                return obj.strftime(ISO_DATETIME)
             if isinstance(obj, date):
                 return obj.strftime(ISO_DATE)
             iterable = iter(obj)
@@ -68,6 +72,20 @@ def parse_date(strdate):
     except Exception as e:
         api.abort(422, "date from the request cannot be parsed: {}".format(e))
     return day
+
+def parse_timestamp(str_timestamp):
+    """Parse a string and convert it to a datetime
+
+    ISO 8601 format, i.e.
+      - YYYY-MM-DD
+      - YYYY-MM-DDThh
+      - YYYY-MM-DDThhmm
+    """
+    try:
+        dt = parse(str_timestamp)
+    except Exception as e:
+        api.abort(422, "date from the request cannot be parsed: {}".format(e))
+    return dt
 
 
 @app.route('/')
