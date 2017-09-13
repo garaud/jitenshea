@@ -249,7 +249,7 @@ class BordeauxDailyStation(Resource):
 
 
 @api.route("/lyon/timeseries/station/<list:ids>")
-class BordeauxDailyStation(Resource):
+class LyonDailyStation(Resource):
     @api.doc(parser=timeseries_parser,
              description="Bicycle station(s) timeseries for Lyon")
     def get(self, ids):
