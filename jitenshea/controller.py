@@ -11,6 +11,8 @@ from itertools import groupby
 from datetime import timedelta
 from collections import namedtuple
 
+import pandas as pd
+
 from jitenshea import config
 from jitenshea.iodb import db
 
@@ -281,3 +283,35 @@ def timeseries(city, station_ids, start, stop):
     rset = eng.execute(query, id_list=tuple(x for x in station_ids),
                        start=start, stop=stop)
     return processing_timeseries(rset)
+
+def hourly_process(df):
+    """DataFrame with timeseries into a hourly transaction profile
+    """
+    df = df.copy().set_index('ts')
+    transaction = (df['available_bike']
+                   .diff()
+                   .abs()
+                   .dropna()
+                   .resample('H')
+                   .sum()
+                   .reset_index())
+    transaction['hour'] = transaction['ts'].apply(lambda x: x.hour)
+    return transaction.groupby('hour')['available_bike'].agg(['sum', 'mean'])
+
+def hourly_profile(city, stations_ids, date, window):
+    """Return the number of transaction per hour
+
+    city: str
+    stations_ids: list
+    date: date
+    window: int
+        number of days
+
+    Return a dict of DataFrame with sum,mean transaction for each hour
+    """
+    start = date - timedelta(window)
+    result = {}
+    for data in timeseries(city, stations_ids, start, date):
+        df = pd.DataFrame(data)
+        result[df.iloc[0]['id']] = hourly_process(df)
+    return result
