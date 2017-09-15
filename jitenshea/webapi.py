@@ -129,6 +129,12 @@ timeseries_parser.add_argument("start", required=True, dest="start", location="a
 timeseries_parser.add_argument("stop", required=True, dest="stop", location="args",
                           help="Stop date YYYY-MM-DDThhmm")
 
+hourly_parser = api.parser()
+hourly_parser.add_argument("date", required=True, dest="date", location="args",
+                          help="day of the transactions")
+hourly_parser.add_argument("window", required=False, type=int, default=7, dest="window",
+                          location="args", help="How many backward days?")
+
 
 @app.route('/doc/')
 def swagger_ui():
@@ -259,6 +265,34 @@ class LyonDailyStation(Resource):
         rset = controller.timeseries('lyon', ids, start, stop)
         if not rset:
             api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
+        return jsonify(rset)
+
+
+@api.route("/bordeaux/hourly/station/<list:ids>")
+class BordeauxHourlyStation(Resource):
+    @api.doc(parser=hourly_parser,
+             description="Bicycle station(s) hourly profile for Bordeaux")
+    def get(self, ids):
+        args = hourly_parser.parse_args()
+        day = parse_date(args['date'])
+        window = args['window']
+        rset = controller.hourly_profile('bordeaux', ids, day, window)
+        if not rset:
+            api.abort(404, "No such data for id: {} for {}".format(ids, day))
+        return jsonify(rset)
+
+
+@api.route("/lyon/hourly/station/<list:ids>")
+class LyonHourlyStation(Resource):
+    @api.doc(parser=hourly_parser,
+             description="Bicycle station(s) hourly profile for Lyon")
+    def get(self, ids):
+        args = hourly_parser.parse_args()
+        day = parse_date(args['date'])
+        window = args['window']
+        rset = controller.hourly_profile('lyon', ids, day, window)
+        if not rset:
+            api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
 
 
