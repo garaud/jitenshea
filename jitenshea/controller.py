@@ -286,6 +286,11 @@ def timeseries(city, station_ids, start, stop):
 
 def hourly_process(df):
     """DataFrame with timeseries into a hourly transaction profile
+
+    df: DataFrame
+        timeseries bike data for one specific station
+
+    Return a DataFrame with the transactions sum & mean for each hour
     """
     df = df.copy().set_index('ts')
     transaction = (df['available_bike']
@@ -307,11 +312,21 @@ def hourly_profile(city, stations_ids, date, window):
     window: int
         number of days
 
-    Return a dict of DataFrame with sum,mean transaction for each hour
+    Note: quite annoying to convert np.int64, np.float64 from the DataFrame to
+    JSON, even if you convert the DataFrame to dict. So, I use the .tolist()
+    np.array method for the index and each column.
+
+    Return a list of dicts
     """
     start = date - timedelta(window)
-    result = {}
+    result = []
     for data in timeseries(city, stations_ids, start, date):
         df = pd.DataFrame(data)
-        result[df.iloc[0]['id']] = hourly_process(df)
+        profile = hourly_process(df)
+        result.append({
+            'id': data['id'],
+            'name': data['name'],
+            'hour': profile.index.values.tolist(),
+            'sum': profile['sum'].values.tolist(),
+            'mean': profile['mean'].values.tolist()})
     return result
