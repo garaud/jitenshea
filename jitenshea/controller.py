@@ -135,6 +135,8 @@ def bordeaux_stations(limit=20):
       ,adresse AS address
       ,commune AS city
       ,nbsuppor::int AS nb_bikes
+      ,st_x(st_transform(geom, 4326)) AS x
+      ,st_y(st_transform(geom, 4326)) AS y
     FROM {schema}.vcub_station
     LIMIT {limit}
     """.format(schema=config['bordeaux']['schema'],
@@ -153,6 +155,8 @@ def lyon_stations(limit=20):
       ,adresse1 AS address
       ,commune AS city
       ,nbbornette::int AS nb_bikes
+      ,st_x(geom) AS x
+      ,st_y(geom) AS y
     FROM {schema}.pvostationvelov
     LIMIT {limit}
     """.format(schema=config['lyon']['schema'],
