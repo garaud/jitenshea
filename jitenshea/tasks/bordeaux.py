@@ -162,7 +162,7 @@ class ShapefileIntoDB(luigi.Task):
     """Dump a shapefile into a table
     """
     schema = luigi.Parameter(default=config['bordeaux']["schema"])
-    projection = luigi.Parameter(default='4326')
+    projection = luigi.Parameter(default='2154')
     fname = "TB_STVEL_P"
     table = "vcub_station"
 
