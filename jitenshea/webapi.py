@@ -135,6 +135,12 @@ hourly_profile_parser.add_argument("date", required=True, dest="date", location=
 hourly_profile_parser.add_argument("window", required=False, type=int, default=7, dest="window",
                                    location="args", help="How many backward days?")
 
+daily_profile_parser = api.parser()
+daily_profile_parser.add_argument("date", required=True, dest="date", location="args",
+                                   help="day of the transactions")
+daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
+                                   location="args", help="How many backward days?")
+
 
 @app.route('/doc/')
 def swagger_ui():
@@ -291,6 +297,32 @@ class LyonHourlyStation(Resource):
         day = parse_date(args['date'])
         window = args['window']
         rset = controller.hourly_profile('lyon', ids, day, window)
+        if not rset:
+            api.abort(404, "No such data for id: {} for {}".format(ids, day))
+        return jsonify(rset)
+
+@api.route("/bordeaux/profile/daily/station/<list:ids>")
+class BordeauxHourlyStation(Resource):
+    @api.doc(parser=daily_profile_parser,
+             description="Bicycle station(s) daily profile for Bordeaux")
+    def get(self, ids):
+        args = daily_profile_parser.parse_args()
+        day = parse_date(args['date'])
+        window = args['window']
+        rset = controller.daily_profile('bordeaux', ids, day, window)
+        if not rset:
+            api.abort(404, "No such data for id: {} for {}".format(ids, day))
+        return jsonify(rset)
+
+@api.route("/lyon/profile/daily/station/<list:ids>")
+class BordeauxHourlyStation(Resource):
+    @api.doc(parser=daily_profile_parser,
+             description="Bicycle station(s) daily profile for Lyon")
+    def get(self, ids):
+        args = daily_profile_parser.parse_args()
+        day = parse_date(args['date'])
+        window = args['window']
+        rset = controller.daily_profile('lyon', ids, day, window)
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
