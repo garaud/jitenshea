@@ -330,3 +330,42 @@ def hourly_profile(city, station_ids, day, window):
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
     return result
+
+
+def daily_profile_process(df):
+    """DataFrame with dates into a daily transaction profile
+
+    df: DataFrame
+        timeseries bike data for one specific station
+
+    Return a DataFrame with the transactions sum & mean for each day of the week
+    """
+    df = df.copy()
+    df['weekday'] = df['date'].apply(lambda x: x.weekday())
+    return df.groupby('weekday')['value'].agg(['sum', 'mean'])
+
+def daily_profile(city, station_ids, day, window):
+    """Return the number of transaction per day of week
+
+    city: str
+    stations_ids: list
+    day: date
+    window: int
+        number of days
+
+    Note: quite annoying to convert np.int64, np.float64 from the DataFrame to
+    JSON, even if you convert the DataFrame to dict. So, I use the .tolist()
+    np.array method for the index and each column.
+
+    Return a list of dicts
+    """
+    result = []
+    for data in daily_transaction(city, station_ids, day, window):
+        df = pd.DataFrame(data)
+        profile = daily_profile_process(df)
+        result.append({
+            'id': data['id'],
+            'day': profile.index.values.tolist(),
+            'sum': profile['sum'].values.tolist(),
+            'mean': profile['mean'].values.tolist()})
+    return result
