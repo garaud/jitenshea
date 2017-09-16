@@ -129,11 +129,11 @@ timeseries_parser.add_argument("start", required=True, dest="start", location="a
 timeseries_parser.add_argument("stop", required=True, dest="stop", location="args",
                           help="Stop date YYYY-MM-DDThhmm")
 
-hourly_parser = api.parser()
-hourly_parser.add_argument("date", required=True, dest="date", location="args",
-                          help="day of the transactions")
-hourly_parser.add_argument("window", required=False, type=int, default=7, dest="window",
-                          location="args", help="How many backward days?")
+hourly_profile_parser = api.parser()
+hourly_profile_parser.add_argument("date", required=True, dest="date", location="args",
+                                   help="day of the transactions")
+hourly_profile_parser.add_argument("window", required=False, type=int, default=7, dest="window",
+                                   location="args", help="How many backward days?")
 
 
 @app.route('/doc/')
@@ -268,12 +268,12 @@ class LyonDailyStation(Resource):
         return jsonify(rset)
 
 
-@api.route("/bordeaux/hourly/station/<list:ids>")
+@api.route("/bordeaux/profile/hourly/station/<list:ids>")
 class BordeauxHourlyStation(Resource):
-    @api.doc(parser=hourly_parser,
+    @api.doc(parser=hourly_profile_parser,
              description="Bicycle station(s) hourly profile for Bordeaux")
     def get(self, ids):
-        args = hourly_parser.parse_args()
+        args = hourly_profile_parser.parse_args()
         day = parse_date(args['date'])
         window = args['window']
         rset = controller.hourly_profile('bordeaux', ids, day, window)
@@ -282,12 +282,12 @@ class BordeauxHourlyStation(Resource):
         return jsonify(rset)
 
 
-@api.route("/lyon/hourly/station/<list:ids>")
+@api.route("/lyon/profile/hourly/station/<list:ids>")
 class LyonHourlyStation(Resource):
-    @api.doc(parser=hourly_parser,
+    @api.doc(parser=hourly_profile_parser,
              description="Bicycle station(s) hourly profile for Lyon")
     def get(self, ids):
-        args = hourly_parser.parse_args()
+        args = hourly_profile_parser.parse_args()
         day = parse_date(args['date'])
         window = args['window']
         rset = controller.hourly_profile('lyon', ids, day, window)
