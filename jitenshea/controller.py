@@ -90,6 +90,26 @@ def time_window(day, window, backward):
         order_reference_date = start
     return TimeWindow(start, stop, order_reference_date)
 
+def station_geojson(stations):
+    """Process station data into GeoJSON
+    """
+    result = []
+    for data in stations:
+        result.append(
+            {"type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [data['x'], data['y']]
+             },
+             "properties": {
+                 "id": data['id'],
+                 "name": data['name'],
+                 "address": data['address'],
+                 "city": data['city'],
+                 "nb_bikes": data['nb_bikes']
+             }})
+    return result
+
 def cities():
     "List of cities"
     # Lyon
@@ -103,11 +123,12 @@ def cities():
              'country': 'france',
              'stations': 174}]
 
-def stations(city, limit):
+def stations(city, limit, geojson):
     """List of bicycle stations
 
     city: string
     limit: int
+    geojson: boolean
 
     Return a list of dict, one dict by bicycle station
     """
@@ -120,7 +141,11 @@ def stations(city, limit):
     eng = db()
     rset = eng.execute(query)
     keys = rset.keys()
-    return [dict(zip(keys, row)) for row in rset]
+    result = [dict(zip(keys, row)) for row in rset]
+    if geojson:
+        return station_geojson(result)
+    return result
+
 
 def bordeaux_stations(limit=20):
     """Query for the list of bicycle stations in Bordeaux
