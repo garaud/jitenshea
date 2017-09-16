@@ -100,8 +100,11 @@ api = Api(app,
 
 # Parsers
 station_list_parser = api.parser()
-station_list_parser.add_argument("limit", required=False, default=20, dest='limit',
+station_list_parser.add_argument("limit", required=False, default=100, dest='limit',
                                  location='args', help='Limit')
+station_list_parser.add_argument("geojson", required=False, default=False, dest='geojson',
+                                 location='args', help='GeoJSON format?')
+
 daily_parser = api.parser()
 daily_parser.add_argument("date", required=True, dest="date", location="args",
                           help="day of the transactions")
@@ -159,7 +162,8 @@ class LyonStationList(Resource):
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
-        return jsonify(controller.stations('lyon', limit))
+        geojson = args['geojson']
+        return jsonify(controller.stations('lyon', limit, geojson))
 
 @api.route("/lyon/station/<list:ids>")
 class LyonStation(Resource):
@@ -177,7 +181,8 @@ class BordeauxStationList(Resource):
     def get(self):
         args = station_list_parser.parse_args()
         limit = args['limit']
-        return jsonify(controller.stations('bordeaux', limit))
+        geojson = args['geojson']
+        return jsonify(controller.stations('bordeaux', limit, geojson))
 
 @api.route("/bordeaux/station/<list:ids>")
 class BordeauxStation(Resource):
