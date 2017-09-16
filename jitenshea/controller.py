@@ -303,12 +303,12 @@ def hourly_process(df):
     transaction['hour'] = transaction['ts'].apply(lambda x: x.hour)
     return transaction.groupby('hour')['available_bike'].agg(['sum', 'mean'])
 
-def hourly_profile(city, stations_ids, date, window):
+def hourly_profile(city, station_ids, day, window):
     """Return the number of transaction per hour
 
     city: str
-    stations_ids: list
-    date: date
+    station_ids: list
+    day: date
     window: int
         number of days
 
@@ -318,9 +318,9 @@ def hourly_profile(city, stations_ids, date, window):
 
     Return a list of dicts
     """
-    start = date - timedelta(window)
+    start = day - timedelta(window)
     result = []
-    for data in timeseries(city, stations_ids, start, date):
+    for data in timeseries(city, station_ids, start, day):
         df = pd.DataFrame(data)
         profile = hourly_process(df)
         result.append({
