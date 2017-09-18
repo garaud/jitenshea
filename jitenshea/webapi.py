@@ -87,6 +87,10 @@ def parse_timestamp(str_timestamp):
         api.abort(422, "date from the request cannot be parsed: {}".format(e))
     return dt
 
+def check_city(city):
+    if city not in ('bordeaux', 'lyon'):
+        api.abort(404, "City {} not found".format(city))
+
 
 @app.route('/')
 def index():
@@ -306,28 +310,16 @@ class LyonHourlyStation(Resource):
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
 
-@api.route("/bordeaux/profile/daily/station/<list:ids>")
+@api.route("/<string:city>/profile/daily/station/<list:ids>")
 class BordeauxHourlyStation(Resource):
     @api.doc(parser=daily_profile_parser,
-             description="Bicycle station(s) daily profile for Bordeaux")
-    def get(self, ids):
+             description="Bicycle station(s) daily profile")
+    def get(self, city, ids):
+        check_city(city)
         args = daily_profile_parser.parse_args()
         day = parse_date(args['date'])
         window = args['window']
-        rset = controller.daily_profile('bordeaux', ids, day, window)
-        if not rset:
-            api.abort(404, "No such data for id: {} for {}".format(ids, day))
-        return jsonify(rset)
-
-@api.route("/lyon/profile/daily/station/<list:ids>")
-class BordeauxHourlyStation(Resource):
-    @api.doc(parser=daily_profile_parser,
-             description="Bicycle station(s) daily profile for Lyon")
-    def get(self, ids):
-        args = daily_profile_parser.parse_args()
-        day = parse_date(args['date'])
-        window = args['window']
-        rset = controller.daily_profile('lyon', ids, day, window)
+        rset = controller.daily_profile(city, ids, day, window)
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
