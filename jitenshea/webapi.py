@@ -20,6 +20,7 @@ from jitenshea import controller
 
 ISO_DATE = '%Y-%m-%d'
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S'
+CITIES = ('lyon', 'bordeaux')
 
 daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea")
@@ -88,7 +89,7 @@ def parse_timestamp(str_timestamp):
     return dt
 
 def check_city(city):
-    if city not in ('bordeaux', 'lyon'):
+    if city not in CITIES:
         api.abort(404, "City {} not found".format(city))
 
 
