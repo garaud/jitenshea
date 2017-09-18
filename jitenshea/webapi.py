@@ -255,57 +255,30 @@ class BordeauxDailyStationList(Resource):
         return jsonify(rset)
 
 
-@api.route("/bordeaux/timeseries/station/<list:ids>")
+@api.route("/<string:city>/timeseries/station/<list:ids>")
 class BordeauxDailyStation(Resource):
     @api.doc(parser=timeseries_parser,
-             description="Bicycle station(s) timeseries for Bordeaux")
-    def get(self, ids):
+             description="Bicycle station(s) timeseries")
+    def get(self, city, ids):
+        check_city(city)
         args = timeseries_parser.parse_args()
         start = parse_timestamp(args['start'])
         stop = parse_timestamp(args['stop'])
-        rset = controller.timeseries('bordeaux', ids, start, stop)
+        rset = controller.timeseries(city, ids, start, stop)
         if not rset:
             api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
         return jsonify(rset)
 
-
-@api.route("/lyon/timeseries/station/<list:ids>")
-class LyonDailyStation(Resource):
-    @api.doc(parser=timeseries_parser,
-             description="Bicycle station(s) timeseries for Lyon")
-    def get(self, ids):
-        args = timeseries_parser.parse_args()
-        start = parse_timestamp(args['start'])
-        stop = parse_timestamp(args['stop'])
-        rset = controller.timeseries('lyon', ids, start, stop)
-        if not rset:
-            api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
-        return jsonify(rset)
-
-
-@api.route("/bordeaux/profile/hourly/station/<list:ids>")
-class BordeauxHourlyStation(Resource):
-    @api.doc(parser=hourly_profile_parser,
-             description="Bicycle station(s) hourly profile for Bordeaux")
-    def get(self, ids):
-        args = hourly_profile_parser.parse_args()
-        day = parse_date(args['date'])
-        window = args['window']
-        rset = controller.hourly_profile('bordeaux', ids, day, window)
-        if not rset:
-            api.abort(404, "No such data for id: {} for {}".format(ids, day))
-        return jsonify(rset)
-
-
-@api.route("/lyon/profile/hourly/station/<list:ids>")
+@api.route("/<string:city>/profile/hourly/station/<list:ids>")
 class LyonHourlyStation(Resource):
     @api.doc(parser=hourly_profile_parser,
-             description="Bicycle station(s) hourly profile for Lyon")
-    def get(self, ids):
+             description="Bicycle station(s) hourly profile")
+    def get(self, city, ids):
+        check_city(city)
         args = hourly_profile_parser.parse_args()
         day = parse_date(args['date'])
         window = args['window']
-        rset = controller.hourly_profile('lyon', ids, day, window)
+        rset = controller.hourly_profile(city, ids, day, window)
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
