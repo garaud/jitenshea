@@ -160,15 +160,16 @@ class City(Resource):
     def get(self):
         return jsonify(controller.cities())
 
-@api.route("/lyon/station")
-class LyonStationList(Resource):
+@api.route("/<string:city>/station")
+class CityStationList(Resource):
     @api.doc(parser=station_list_parser,
-                 description="Bicycle-sharing stations for Lyon")
-    def get(self):
+                 description="Bicycle-sharing stations")
+    def get(self, city):
+        check_city(city)
         args = station_list_parser.parse_args()
         limit = args['limit']
         geojson = args['geojson']
-        return jsonify(controller.stations('lyon', limit, geojson))
+        return jsonify(controller.stations(city, limit, geojson))
 
 @api.route("/lyon/station/<list:ids>")
 class LyonStation(Resource):
@@ -179,16 +180,6 @@ class LyonStation(Resource):
             api.abort(404, "No such id: {}".format(ids))
         return jsonify(rset)
 
-@api.route("/bordeaux/station")
-class BordeauxStationList(Resource):
-    @api.doc(parser=station_list_parser,
-             description="Bicycle-sharing stations for Bordeaux")
-    def get(self):
-        args = station_list_parser.parse_args()
-        limit = args['limit']
-        geojson = args['geojson']
-        return jsonify(controller.stations('bordeaux', limit, geojson))
-
 @api.route("/bordeaux/station/<list:ids>")
 class BordeauxStation(Resource):
     @api.doc(description="Bicycle station(s) for Bordeaux")
@@ -198,66 +189,40 @@ class BordeauxStation(Resource):
             api.abort(404, "No such id: {}".format(ids))
         return jsonify(rset)
 
-@api.route("/bordeaux/daily/station/<list:ids>")
-class BordeauxDailyStation(Resource):
+@api.route("/<string:city>/daily/station/<list:ids>")
+class CityDailyStation(Resource):
     @api.doc(parser=daily_parser,
-             description="Bicycle station(s) daily transactions for Bordeaux")
-    def get(self, ids):
+             description="Bicycle station(s) daily transactions")
+    def get(self, city, ids):
+        check_city(city)
         args = daily_parser.parse_args()
         day = parse_date(args['date'])
-        rset = controller.daily_transaction('bordeaux', ids, day,
-                                            args['window'], args['backward'])
-        if not rset:
-            api.abort(404, "No such data for id: {} at {}".format(ids, day))
-        return jsonify(rset)
-
-@api.route("/lyon/daily/station/<list:ids>")
-class LyonDailyStation(Resource):
-    @api.doc(parser=daily_parser,
-             description="Bicycle station(s) daily transactions for Lyon")
-    def get(self, ids):
-        args = daily_parser.parse_args()
-        day = parse_date(args['date'])
-        rset = controller.daily_transaction('lyon', ids, day, args['window'],
+        rset = controller.daily_transaction(city, ids, day, args['window'],
                                             args['backward'])
         if not rset:
             api.abort(404, "No such data for id: {} at {}".format(ids, day))
         return jsonify(rset)
 
 
-@api.route("/bordeaux/daily/station")
-class BordeauxDailyStationList(Resource):
+@api.route("/<string:city>/daily/station")
+class CityDailyStationList(Resource):
     @api.doc(parser=daily_list_parser,
-             description="Daily transactions for all stations in Bordeaux")
-    def get(self):
+             description="Daily transactions for all stations")
+    def get(self, city):
+        check_city(city)
         args = daily_list_parser.parse_args()
         day = parse_date(args['date'])
         limit = args['limit']
         order_by = args['order_by']
         if order_by not in ('station', 'value'):
             api.abort(400, "wrong 'by' value parameter. Should be 'station' of 'value'")
-        rset = controller.daily_transaction_list('bordeaux', day, limit, order_by,
-                                                 args['window'], args['backward'])
-        return jsonify(rset)
-
-@api.route("/lyon/daily/station")
-class BordeauxDailyStationList(Resource):
-    @api.doc(parser=daily_list_parser,
-             description="Daily transactions for all stations in Lyon")
-    def get(self):
-        args = daily_list_parser.parse_args()
-        day = parse_date(args['date'])
-        limit = args['limit']
-        order_by = args['order_by']
-        if order_by not in ('station', 'value'):
-            api.abort(400, "wrong 'by' value parameter. Should be 'station' of 'value'")
-        rset = controller.daily_transaction_list('lyon', day, limit, order_by,
+        rset = controller.daily_transaction_list(city, day, limit, order_by,
                                                  args['window'], args['backward'])
         return jsonify(rset)
 
 
 @api.route("/<string:city>/timeseries/station/<list:ids>")
-class BordeauxDailyStation(Resource):
+class CityTimeseriesStation(Resource):
     @api.doc(parser=timeseries_parser,
              description="Bicycle station(s) timeseries")
     def get(self, city, ids):
@@ -271,7 +236,7 @@ class BordeauxDailyStation(Resource):
         return jsonify(rset)
 
 @api.route("/<string:city>/profile/hourly/station/<list:ids>")
-class LyonHourlyStation(Resource):
+class CityHourlyStation(Resource):
     @api.doc(parser=hourly_profile_parser,
              description="Bicycle station(s) hourly profile")
     def get(self, city, ids):
@@ -285,7 +250,7 @@ class LyonHourlyStation(Resource):
         return jsonify(rset)
 
 @api.route("/<string:city>/profile/daily/station/<list:ids>")
-class BordeauxHourlyStation(Resource):
+class CityDailyStation(Resource):
     @api.doc(parser=daily_profile_parser,
              description="Bicycle station(s) daily profile")
     def get(self, city, ids):
