@@ -22,4 +22,5 @@ CREATE VIEW lyon.timeserie_norm AS
       ,available_bikes AS available_bike
       ,last_update AS ts
     FROM lyon.timeserie
-    LEFT JOIN lyon.pvostationvelov AS S ON (S.idstation::int = number) ) AS A;
+      LEFT JOIN lyon.pvostationvelov AS S ON (S.idstation::int = number)
+    ORDER BY number,last_update ) AS A;
