@@ -158,7 +158,7 @@ def bordeaux_stations(limit=20):
     return """SELECT numstat::int AS id
       ,nom AS name
       ,adresse AS address
-      ,commune AS city
+      ,lower(commune) AS city
       ,nbsuppor::int AS nb_bikes
       ,st_x(st_transform(geom, 4326)) AS x
       ,st_y(st_transform(geom, 4326)) AS y
@@ -178,7 +178,7 @@ def lyon_stations(limit=20):
     return """SELECT idstation::int AS id
       ,nom AS name
       ,adresse1 AS address
-      ,commune AS city
+      ,lower(commune) AS city
       ,nbbornette::int AS nb_bikes
       ,st_x(geom) AS x
       ,st_y(geom) AS y
