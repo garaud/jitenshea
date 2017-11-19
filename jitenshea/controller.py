@@ -108,7 +108,7 @@ def station_geojson(stations):
                  "city": data['city'],
                  "nb_bikes": data['nb_bikes']
              }})
-    return result
+    return {"type": "FeatureCollection", "features": result}
 
 def cities():
     "List of cities"
