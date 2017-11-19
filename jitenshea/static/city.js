@@ -45,3 +45,44 @@ $(document).ready(function() {
     L.geoJSON(data).addTo(station_map);
   } );
 } );
+
+$(document).ready(function() {
+  var day = '2017-07-22';
+  // day before today
+  // var yesterday = new Date()
+  // yesterday.setDate(yesterday.getDate() - 1);
+  // console.log(yesterday.toISOString().substring(0, 10));
+  var url = cityurl("cityDailyTransactions") + "/daily/station?limit=10&by=value&date=" + day;
+  $.get(url, function(content) {
+    // console.log(content.data);
+    // var data = content.data.map(function(x) {
+      // return {"name": x.name, "data": x.value};
+    // });
+    // console.log(data);
+    // console.log(content.data.map(function(x) {
+      // return {"name": x.id, "data": x.value}
+    // }));
+    console.log(content.data);
+    console.log(content.data.map(function(x) { return x.name; }));
+    Highcharts.chart('cityDailyTransactions', {
+      chart: {
+        type: 'column'
+      },
+      title: {
+        text: 'Daily Transactions'
+      },
+      xAxis: {
+        categories: content.data.map(function(x) { return x.name; })
+      },
+      yAxis: {
+        title: {
+          text: 'Number of daily transactions'
+        }
+      },
+      series: [{
+        name: "transactions",
+        data: content.data.map(function(x) { return x.value; })
+      }]
+    } );
+  } );
+} );

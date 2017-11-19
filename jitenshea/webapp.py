@@ -9,8 +9,6 @@ import logging
 from flask import Flask, render_template, abort
 from flask_restplus import apidoc
 
-# from jitenshea.webapi import api
-
 
 daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea-webapp")
@@ -40,6 +38,11 @@ def city_view(city):
     return render_template('city.html', city=city)
 
 
+@app.route("/<string:city>/<int:station_id>")
+def station_view(city, station_id):
+    check_city(city)
+    return render_template('station.html', city=city, station_id=station_id)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
-
