@@ -45,7 +45,7 @@ def processing_daily_data(rset, window):
         values.append({'id': k,
                        "date": [x['date'] for x in group],
                        'value': [x['value'] for x in group]})
-    return values
+    return {"data": values}
 
 def processing_timeseries(rset):
     """Processing the result of a timeseries SQL query
@@ -63,7 +63,7 @@ def processing_timeseries(rset):
                        "ts": [x['ts'] for x in group],
                        'available_bike': [x['available_bike'] for x in group],
                        'available_stand': [x['available_stand'] for x in group]})
-    return values
+    return {"data": values}
 
 
 def time_window(day, window, backward):
@@ -116,12 +116,12 @@ def cities():
     # select count(*) from lyon.pvostationvelov;
     # Bdx
     # select count(*) from bordeaux.vcub_station;
-    return [{'city': 'lyon',
-             'country': 'france',
-             'stations': 348},
-            {'city': 'bordeaux',
-             'country': 'france',
-             'stations': 174}]
+    return {"data": [{'city': 'lyon',
+                      'country': 'france',
+                      'stations': 348},
+                     {'city': 'bordeaux',
+                      'country': 'france',
+                      'stations': 174}]}
 
 def stations(city, limit, geojson):
     """List of bicycle stations
@@ -144,7 +144,7 @@ def stations(city, limit, geojson):
     result = [dict(zip(keys, row)) for row in rset]
     if geojson:
         return station_geojson(result)
-    return result
+    return {"data": result}
 
 
 def bordeaux_stations(limit=20):
@@ -199,7 +199,7 @@ def bordeaux(station_ids):
     rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
     if not rset:
         return []
-    return [dict(zip(x.keys(), x)) for x in rset]
+    return {"data" : [dict(zip(x.keys(), x)) for x in rset]}
 
 def lyon(station_ids):
     """Get some specific bicycle-sharing stations for Lyon
@@ -213,7 +213,7 @@ def lyon(station_ids):
     rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
     if not rset:
         return []
-    return [dict(zip(x.keys(), x)) for x in rset]
+    return {"data" : [dict(zip(x.keys(), x)) for x in rset]}
 
 
 def daily_query(city):
@@ -358,7 +358,7 @@ def hourly_profile(city, station_ids, day, window):
             'hour': profile.index.values.tolist(),
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
-    return result
+    return {"data": result}
 
 
 def daily_profile_process(df):
@@ -397,4 +397,4 @@ def daily_profile(city, station_ids, day, window):
             'day': profile.index.values.tolist(),
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
-    return result
+    return {"data": result}
