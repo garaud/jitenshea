@@ -3,8 +3,8 @@
 // Note : the 'cityurl' function is in the 'app.js' file.
 
 // List of stations with DataTables
-// TODO: make id and name clickable with href to URL/city/<id>
 $(document).ready(function() {
+  var city = document.getElementById("citytable").getAttribute("city");
   $('#citytable').DataTable( {
     scrollY:        '80vh',
     scrollCollapse: true,
@@ -13,6 +13,13 @@ $(document).ready(function() {
     ajax: {
       url: cityurl("citytable") + "/station?limit=400"
     },
+    columnDefs: [ {
+      "targets": 1,
+      "data": "name",
+      "render": function(data, type, row, meta) {
+        return '<a href="/' + city + "/" + row.id + '?name=' + data + '">' + data + '</a>';
+      }
+    } ],
     columns: [
       { "data": "id" },
       { "data": "name"},

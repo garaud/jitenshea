@@ -6,8 +6,7 @@
 import daiquiri
 import logging
 
-from flask import Flask, render_template, abort
-from flask_restplus import apidoc
+from flask import Flask, render_template, abort, request
 
 
 daiquiri.setup(level=logging.INFO)
@@ -41,7 +40,9 @@ def city_view(city):
 @app.route("/<string:city>/<int:station_id>")
 def station_view(city, station_id):
     check_city(city)
-    return render_template('station.html', city=city, station_id=station_id)
+    name = request.args.get('name')
+    return render_template('station.html', city=city, station_id=station_id,
+                           station_name=name)
 
 
 if __name__ == '__main__':
