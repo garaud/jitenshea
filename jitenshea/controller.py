@@ -44,7 +44,8 @@ def processing_daily_data(rset, window):
         group = list(group)
         values.append({'id': k,
                        "date": [x['date'] for x in group],
-                       'value': [x['value'] for x in group]})
+                       'value': [x['value'] for x in group],
+                       'name': group[0]['name']})
     return {"data": values}
 
 def processing_timeseries(rset):
@@ -216,17 +217,31 @@ def lyon(station_ids):
     return {"data" : [dict(zip(x.keys(), x)) for x in rset]}
 
 
+def station_city_table(city):
+    """Name table and ID column name
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    if city == 'bordeaux':
+        return 'vcub_station', 'numstat'
+    if city == 'lyon':
+        return 'pvostationvelov', 'idstation'
+
+
 def daily_query(city):
     """SQL query to get daily transactions according to the city
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
+    table, idcol = station_city_table(city)
     return """SELECT id
            ,number AS value
            ,date
-        FROM {schema}.daily_transaction
+           ,Y.nom AS name
+        FROM {schema}.daily_transaction AS X
+        LEFT JOIN {schema}.{table} AS Y ON X.id=Y.{idcol}::int
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
-        ORDER BY id,date""".format(schema=config[city]['schema'])
+        ORDER BY id,date""".format(schema=config[city]['schema'], table=table, idcol=idcol)
 
 def daily_query_stations(city, limit, order_by='station'):
     """SQL query to get daily transactions for all stations
@@ -237,6 +252,7 @@ def daily_query_stations(city, limit, order_by='station'):
         order_by = 'id'
     if order_by == 'value':
         order_by = 'number DESC'
+    table, idcol = station_city_table(city)
     return """WITH station AS (
             SELECT id
               ,row_number() over (partition by null order by {order_by}) AS rank
@@ -248,10 +264,14 @@ def daily_query_stations(city, limit, order_by='station'):
         SELECT S.id
           ,D.number AS value
           ,D.date
+          ,Y.nom AS name
         FROM station AS S
         LEFT JOIN {schema}.daily_transaction AS D ON (S.id=D.id)
+        LEFT JOIN {schema}.{table} AS Y ON S.id=Y.{idcol}::int
         WHERE D.date >= %(start)s AND D.date <= %(stop)s
         ORDER BY S.rank,D.date;""".format(schema=config[city]['schema'],
+                                          table=table,
+                                          idcol=idcol,
                                           order_by=order_by,
                                           limit=limit)
 
