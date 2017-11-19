@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>Station #{{station_id}} {{station_name}} in {{city|capitalize}}</h2>
+
+
+
+{% endblock %}
+
+
+{% block appjs %}
+<script src="{{ url_for('static', filename='station.js') }}" type="text/javascript"></script>
+{% endblock %}
