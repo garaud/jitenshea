@@ -31,13 +31,13 @@ $(document).ready(function() {
 //  - is it possible to set a bbox (computed by turjs) instead of a zoom in the
 //    'setView' function.
 $(document).ready(function() {
-  var station_map = L.map("station-map");
+  var station_map = L.map("stationMap");
   var OSM_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
   OSM_Mapnik.addTo(station_map);
-  $.get(cityurl("station-map") + "/station?geojson=true&limit=400", function(data) {
+  $.get(cityurl("stationMap") + "/station?geojson=true&limit=400", function(data) {
     // Get the centroid of all stations.
     var centroid = turf.center(data);
     station_map.setView([centroid.geometry.coordinates[1],
