@@ -54,16 +54,6 @@ $(document).ready(function() {
   // console.log(yesterday.toISOString().substring(0, 10));
   var url = cityurl("cityDailyTransactions") + "/daily/station?limit=10&by=value&date=" + day;
   $.get(url, function(content) {
-    // console.log(content.data);
-    // var data = content.data.map(function(x) {
-      // return {"name": x.name, "data": x.value};
-    // });
-    // console.log(data);
-    // console.log(content.data.map(function(x) {
-      // return {"name": x.id, "data": x.value}
-    // }));
-    console.log(content.data);
-    console.log(content.data.map(function(x) { return x.name; }));
     Highcharts.chart('cityDailyTransactions', {
       chart: {
         type: 'column'
