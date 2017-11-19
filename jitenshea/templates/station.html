@@ -2,8 +2,22 @@
 
 {% block content %}
 
-<h2>Station #{{station_id}} {{station_name}} in {{city|capitalize}}</h2>
+<!-- <h2>Station #{{station_id}} {{station_name}} in {{city|capitalize}}</h2> -->
 
+<div class="container" id="stationSummary" city="{{city}}" station_id="{{station_id}}">
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h3>Station #{{station_id}} {{station_name}} in {{city|capitalize}}</h3>
+    </div>
+    <ul>
+      <li id="id"><b>ID</b>: </li>
+      <li id="name"><b>Name</b>: </li>
+      <li id="nbBikes"><b>Bikes</b>: </li>
+      <li id="address"><b>Address</b>: </li>
+      <li id="city"><b>City</b>: </li>
+    </ul>
+  </div>
+</div>
 
 
 {% endblock %}
