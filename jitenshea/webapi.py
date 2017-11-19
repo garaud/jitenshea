@@ -30,6 +30,7 @@ app = Flask(__name__)
 app.config['ERROR_404_HELP'] = False
 app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 
+
 class CustomJSONEncoder(JSONEncoder):
     """Custom JSON encoder to handle date
     """
@@ -92,10 +93,6 @@ def check_city(city):
     if city not in CITIES:
         api.abort(404, "City {} not found".format(city))
 
-
-@app.route('/')
-def index():
-    return render_template("index.html")
 
 api = Api(app,
           title='Jitenshea: Bicycle-sharing data analysis',
