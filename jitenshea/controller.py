@@ -369,7 +369,7 @@ def hourly_profile(city, station_ids, day, window):
     """
     start = day - timedelta(window)
     result = []
-    for data in timeseries(city, station_ids, start, day):
+    for data in timeseries(city, station_ids, start, day)["data"]:
         df = pd.DataFrame(data)
         profile = hourly_process(df)
         result.append({
