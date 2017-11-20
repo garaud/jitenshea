@@ -40,9 +40,7 @@ def city_view(city):
 @app.route("/<string:city>/<int:station_id>")
 def station_view(city, station_id):
     check_city(city)
-    name = request.args.get('name')
-    return render_template('station.html', city=city, station_id=station_id,
-                           station_name=name)
+    return render_template('station.html', city=city, station_id=station_id)
 
 
 if __name__ == '__main__':

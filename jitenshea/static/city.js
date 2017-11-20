@@ -17,7 +17,7 @@ $(document).ready(function() {
       "targets": 1,
       "data": "name",
       "render": function(data, type, row, meta) {
-        return '<a href="/' + city + "/" + row.id + '?name=' + data + '">' + data + '</a>';
+        return '<a href="/' + city + "/" + row.id + '">' + data + '</a>';
       }
     } ],
     columns: [
