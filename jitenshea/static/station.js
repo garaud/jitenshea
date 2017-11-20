@@ -60,3 +60,46 @@ $(document).ready(function() {
     } );
   } );
 } );
+
+
+// Daily transactions plot
+$(document).ready(function() {
+  var station_id = document.getElementById("stationDailyTransactions").getAttribute("station_id");
+  // Only plot seven days.
+  var day = '2017-07-29'
+  var window = 7;
+  // day before today
+  // var yesterday = new Date()
+  // yesterday.setDate(yesterday.getDate() - 1);
+  // console.log(yesterday.toISOString().substring(0, 10));
+  var url = cityurl("stationDailyTransactions") + "/daily/station/" + station_id
+      + "?date=" + day + "&window=" + window;
+  $.get(url, function(content) {
+    var station_name = content.data[0].name;
+    var date = content.data[0].date;
+    var data = date.map(function(t, i) {
+      return [Date.parse(t), content.data[0].value[i]];
+    });
+    Highcharts.chart('stationDailyTransactions', {
+      chart: {
+        type: 'column'
+      },
+      title: {
+        text: 'Daily transactions for the station ' + station_name
+      },
+      yAxis: {
+        title: {
+          text: 'Daily Transactions'
+        }
+      },
+      xAxis: {
+        type: "datetime",
+      },
+      series: [{
+        "name": "transactions",
+        // "data": content.data[0].value
+        "data": data
+      }]
+    } );
+  } );
+} );
