@@ -378,7 +378,7 @@ def hourly_profile(city, station_ids, day, window):
             'hour': profile.index.values.tolist(),
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
-    return {"data": result}
+    return {"data": result, "date": day, "window": window}
 
 
 def daily_profile_process(df):
@@ -409,7 +409,7 @@ def daily_profile(city, station_ids, day, window):
     Return a list of dicts
     """
     result = []
-    for data in daily_transaction(city, station_ids, day, window):
+    for data in daily_transaction(city, station_ids, day, window)["data"]:
         df = pd.DataFrame(data)
         profile = daily_profile_process(df)
         result.append({
@@ -417,4 +417,4 @@ def daily_profile(city, station_ids, day, window):
             'day': profile.index.values.tolist(),
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
-    return {"data": result}
+    return {"data": result, "date": day, "window": window}
