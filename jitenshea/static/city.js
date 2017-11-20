@@ -53,6 +53,8 @@ $(document).ready(function() {
   } );
 } );
 
+
+// Barplot of most important transactions (day before today)
 $(document).ready(function() {
   var day = '2017-07-22';
   // day before today
