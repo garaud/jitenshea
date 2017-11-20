@@ -40,7 +40,7 @@ $(document).ready(function() {
     });
     Highcharts.chart('stationTimeseries', {
       title: {
-        text: 'Station ' + station_name
+        text: 'Timeseries for the station ' + station_name
       },
       yAxis: {
         title: {
