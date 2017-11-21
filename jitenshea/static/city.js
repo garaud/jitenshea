@@ -71,8 +71,21 @@ $(document).ready(function() {
   // var yesterday = new Date()
   // yesterday.setDate(yesterday.getDate() - 1);
   // console.log(yesterday.toISOString().substring(0, 10));
-  var url = cityurl("cityDailyTransactions") + "/daily/station?limit=10&by=value&date=" + day;
+  var stations_num = 10;
+  var url = cityurl("cityDailyTransactions")
+      + "/daily/station?limit="+ stations_num
+      + "&by=value&date=" + day;
+  // var cmap = d3.interpolateRdBu();
   $.get(url, function(content) {
+    // transactions values
+    var values = content.data.map(function(x) {return x.value;});
+    // value to compute the color according to the value [0,1]
+    var cmax = content.data[0].value;
+    var cmin = content.data[stations_num - 1].value;
+    var cmap = values.map(function(x) {
+      var scale = (x - cmin) / (cmax - cmin)
+      return d3.interpolateYlGnBu(scale);
+    });
     Highcharts.chart('cityDailyTransactions', {
       chart: {
         type: 'column'
@@ -84,13 +97,20 @@ $(document).ready(function() {
         categories: content.data.map(function(x) { return x.name; })
       },
       yAxis: {
+        min: 0,
         title: {
           text: 'Number of daily transactions'
         }
       },
+      plotOptions: {
+        column: {
+          colorByPoint: true,
+          colors: cmap,
+        },
+      },
       series: [{
         name: "transactions",
-        data: content.data.map(function(x) { return x.value; })
+        data: values
       }]
     } );
   } );
