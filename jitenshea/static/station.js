@@ -103,3 +103,86 @@ $(document).ready(function() {
     } );
   } );
 } );
+
+
+// Day profile
+$(document).ready(function() {
+  var station_id = document.getElementById("stationProfileDay").getAttribute("station_id");
+  var day = '2017-07-29'
+  // day before today
+  // var yesterday = new Date()
+  // yesterday.setDate(yesterday.getDate() - 1);
+  // console.log(yesterday.toISOString().substring(0, 10));
+  var url = cityurl("stationProfileDay") + "/profile/hourly/station/" + station_id
+      + "?date=" + day;
+  $.get(url, function(content) {
+    var station_name = content.data[0].name;
+    var data = content.data[0].mean;
+    console.log(data);
+    Highcharts.chart('stationProfileDay', {
+      chart: {
+        type: 'column'
+      },
+      title: {
+        text: 'Day profile for the station ' + station_name
+      },
+      yAxis: {
+        title: {
+          text: 'Transactions mean'
+        }
+      },
+      xAxis: {
+        categories: [...Array(24).keys()].map(function(x) { return x.toString().padStart(2, '0') + 'h'; })
+      },
+      tooltip: {
+        pointFormat: "Mean: {point.y:.2f}"
+      },
+      series: [{
+        "name": "Transaction mean",
+        "data": data,
+        "color": "#90ed7d"
+      }]
+    } );
+  } );
+} );
+
+
+// Week profile
+$(document).ready(function() {
+  var station_id = document.getElementById("stationProfileWeek").getAttribute("station_id");
+  var day = '2017-07-29'
+  // day before today
+  // var yesterday = new Date()
+  // yesterday.setDate(yesterday.getDate() - 1);
+  // console.log(yesterday.toISOString().substring(0, 10));
+  var url = cityurl("stationProfileWeek") + "/profile/daily/station/" + station_id
+      + "?date=" + day;
+  $.get(url, function(content) {
+    var station_name = content.data[0].name;
+    var data = content.data[0].mean;
+    Highcharts.chart('stationProfileWeek', {
+      chart: {
+        type: 'column'
+      },
+      title: {
+        text: 'Week profile for the station ' + station_name
+      },
+      yAxis: {
+        title: {
+          text: 'Transactions mean'
+        }
+      },
+      xAxis: {
+        categories: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      },
+      tooltip: {
+        pointFormat: "Mean: {point.y:.2f}"
+      },
+      series: [{
+        "name": "Transaction mean",
+        "data": data,
+        "color": "#f45b5b"
+      }]
+    } );
+  } );
+} );
