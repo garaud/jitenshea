@@ -33,8 +33,6 @@ $(document).ready(function() {
 
 // Map with all stations with Leaflet
 // TODO :
-//  - change the icon
-//  - hover it with the name and nb bikes
 //  - is it possible to set a bbox (computed by turjs) instead of a zoom in the
 //    'setView' function.
 $(document).ready(function() {
@@ -49,7 +47,19 @@ $(document).ready(function() {
     var centroid = turf.center(data);
     station_map.setView([centroid.geometry.coordinates[1],
                          centroid.geometry.coordinates[0]], 12);
-    L.geoJSON(data).addTo(station_map);
+    L.geoJSON(data, {
+      pointToLayer: function(geoJsonPoint, latlng) {
+        return L.circleMarker(latlng, {radius: 5})
+          .bindPopup("<ul><li>ID: " + geoJsonPoint.properties.id
+                     + "</li><li>Name: " + geoJsonPoint.properties.name + "</li></ul>")
+          .on('mouseover', function(e) {
+            this.openPopup();
+          })
+          .on('mouseout', function(e) {
+            this.closePopup();
+          });
+      }
+    }).addTo(station_map);
   } );
 } );
 
