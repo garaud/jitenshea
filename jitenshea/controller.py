@@ -414,6 +414,7 @@ def daily_profile(city, station_ids, day, window):
         profile = daily_profile_process(df)
         result.append({
             'id': data['id'],
+            'name': data['name'],
             'day': profile.index.values.tolist(),
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
