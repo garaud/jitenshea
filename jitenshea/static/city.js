@@ -50,8 +50,8 @@ $(document).ready(function() {
     L.geoJSON(data, {
       pointToLayer: function(geoJsonPoint, latlng) {
         return L.circleMarker(latlng, {radius: 5})
-          .bindPopup("<ul><li>ID: " + geoJsonPoint.properties.id
-                     + "</li><li>Name: " + geoJsonPoint.properties.name + "</li></ul>")
+          .bindPopup("<ul><li><b>ID</b>: " + geoJsonPoint.properties.id
+                     + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name + "</li></ul>")
           .on('mouseover', function(e) {
             this.openPopup();
           })
