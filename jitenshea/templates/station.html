@@ -2,18 +2,53 @@
 
 {% block content %}
 
-<div class="container" id="stationSummary" city="{{city}}" station_id="{{station_id}}">
-  <div class="panel panel-info">
-    <div class="panel-heading">
-      <h3 id="titlePanel"></h3>
+<div class="container" id="stationSummary" city="{{city}}"
+     station_id="{{station_id}}">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h4 id="titlePanel"></h4>
+          </div>
+          <ul class="list-group">
+            <li class="list-group-item" id="id"><b>ID</b>: </li>
+            <li class="list-group-item" id="name"><b>Name</b>: </li>
+            <li class="list-group-item" id="nbBikes"><b>Bikes</b>: </li>
+            <li class="list-group-item" id="address"><b>Address</b>: </li>
+            <li class="list-group-item" id="city"><b>City</b>: </li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-8" id="stationMap" city="{{city}}" style="height: 280px;">
+      <!-- <div class="col-md-8" id="stationMap" city="{{city}}"> -->
+        <!-- <h3>A Map Here...</h3> -->
+      </div>
     </div>
-    <ul>
-      <li id="id"><b>ID</b>: </li>
-      <li id="name"><b>Name</b>: </li>
-      <li id="nbBikes"><b>Bikes</b>: </li>
-      <li id="address"><b>Address</b>: </li>
-      <li id="city"><b>City</b>: </li>
-    </ul>
+  </div>
+
+  <h2>Profiles</h2>
+
+  <p>Station profiles: transactions mean for each day of the week (resp. hour of
+  the day) for a period of 30 days.</p>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <h3>Hourly</h3>
+        <div id="stationProfileDay" city="{{city}}" station_id="{{station_id}}"
+             style="width: 100%; height:300px;">
+        </div>
+      </div>
+
+      <div class="col-md-6">
+
+        <h3>Daily</h3>
+        <div id="stationProfileWeek" city="{{city}}" station_id="{{station_id}}"
+             style="width: 100%; height:300px;">
+        </div>
+      </div>
+    </div>
   </div>
 
   <h2>Timeseries</h2>
@@ -27,21 +62,6 @@
   <p>Number of transactions these previous days.</p>
 
   <div id="stationDailyTransactions" city="{{city}}" station_id="{{station_id}}"
-       style="width: 100%; height:400px;">
-  </div>
-
-  <h2>Profiles</h2>
-
-  <p>Station profiles: transactions mean for each day of the week (resp. hour of
-  the day) for a period of 30 days.</p>
-
-  <h3>Hour of the day</h3>
-  <div id="stationProfileDay" city="{{city}}" station_id="{{station_id}}"
-       style="width: 100%; height:400px;">
-  </div>
-
-  <h3>Day of the week</h3>
-  <div id="stationProfileWeek" city="{{city}}" station_id="{{station_id}}"
        style="width: 100%; height:400px;">
   </div>
 
