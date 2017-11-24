@@ -65,9 +65,17 @@ function stationsMap(map, data) {
 $(document).ready(function() {
   var station_map = L.map("stationMap");
   var city = document.getElementById("stationMap").getAttribute("city");
-  $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
-    stationsMap(station_map, data);
-  } );
+  var geostations = sessionStorage.getItem(city);
+  if (geostations == null) {
+    $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
+      console.log("stations geodata GET request in " + city);
+      stationsMap(station_map, data);
+      sessionStorage.setItem(city, JSON.stringify(data));
+    } );
+  } else {
+    console.log("station geodata from sesssionStorage in " + city);
+    stationsMap(station_map, JSON.parse(geostations));
+  }
 } );
 
 
