@@ -118,7 +118,6 @@ $(document).ready(function() {
   $.get(url, function(content) {
     var station_name = content.data[0].name;
     var data = content.data[0].mean;
-    console.log(data);
     Highcharts.chart('stationProfileDay', {
       chart: {
         type: 'column'
