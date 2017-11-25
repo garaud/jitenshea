@@ -6,7 +6,7 @@
 import daiquiri
 import logging
 
-from flask import Flask, render_template, abort, request
+from flask import Flask, render_template
 
 
 daiquiri.setup(level=logging.INFO)
@@ -14,6 +14,8 @@ logger = daiquiri.getLogger("jitenshea-webapp")
 
 
 app = Flask(__name__)
+app.config['ERROR_404_HELP'] = False
+app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 
 CITIES = ['bordeaux', 'lyon']
 
@@ -22,14 +24,10 @@ def check_city(city):
     if city not in CITIES:
         abort(404, "City {} not found".format(city))
 
-
 @app.route('/')
 def index():
     return render_template("index.html")
 
-# @app.route('/doc/')
-# def swagger_ui():
-#     return apidoc.ui_for(api)
 
 @app.route("/<string:city>")
 def city_view(city):

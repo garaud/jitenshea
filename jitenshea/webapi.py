@@ -11,24 +11,21 @@ from dateutil.parser import parse
 
 from werkzeug.routing import BaseConverter
 
-from flask import Flask, jsonify, render_template
+from flask import abort, jsonify, request
 from flask.json import JSONEncoder
 from flask_restplus import fields, inputs
 from flask_restplus import Resource, Api, apidoc
 
 from jitenshea import controller
+from jitenshea.webapp import app
+
 
 ISO_DATE = '%Y-%m-%d'
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S'
 CITIES = ('lyon', 'bordeaux')
 
 daiquiri.setup(level=logging.INFO)
-logger = daiquiri.getLogger("jitenshea")
-
-
-app = Flask(__name__)
-app.config['ERROR_404_HELP'] = False
-app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
+logger = daiquiri.getLogger("jitenshea-webapi")
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -96,7 +93,8 @@ def check_city(city):
 
 api = Api(app,
           title='Jitenshea: Bicycle-sharing data analysis',
-          ui=False,
+          prefix='/api',
+          doc=False,
           version='0.1',
           description="Retrieve some data related to bicycle-sharing data from some cities.")
 
@@ -142,7 +140,7 @@ hourly_profile_parser.add_argument("window", required=False, type=int, default=7
 
 daily_profile_parser = api.parser()
 daily_profile_parser.add_argument("date", required=True, dest="date", location="args",
-                                   help="day of the transactions")
+                                  help="day of the transactions")
 daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
                                    location="args", help="How many backward days?")
 
@@ -259,8 +257,3 @@ class CityDailyStation(Resource):
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
