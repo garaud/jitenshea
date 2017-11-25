@@ -166,20 +166,15 @@ class CityStationList(Resource):
         geojson = args['geojson']
         return jsonify(controller.stations(city, limit, geojson))
 
-@api.route("/lyon/station/<list:ids>")
-class LyonStation(Resource):
-    @api.doc(description="Bicycle station(s) for Lyon")
-    def get(self, ids):
-        rset = controller.lyon(ids)
-        if not rset:
-            api.abort(404, "No such id: {}".format(ids))
-        return jsonify(rset)
-
-@api.route("/bordeaux/station/<list:ids>")
-class BordeauxStation(Resource):
-    @api.doc(description="Bicycle station(s) for Bordeaux")
-    def get(self, ids):
-        rset = controller.bordeaux(ids)
+@api.route("/<string:city>/station/<list:ids>")
+class CityStation(Resource):
+    @api.doc(description="Bicycle station(s)")
+    def get(self, city, ids):
+        check_city(city)
+        if city == 'bordeaux':
+            rset = controller.bordeaux(ids)
+        if city == 'lyon':
+            rset = controller.lyon(ids)
         if not rset:
             api.abort(404, "No such id: {}".format(ids))
         return jsonify(rset)
