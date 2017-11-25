@@ -11,10 +11,10 @@ from dateutil.parser import parse
 
 from werkzeug.routing import BaseConverter
 
-from flask import abort, jsonify, request
+from flask import abort, jsonify, request, render_template
 from flask.json import JSONEncoder
 from flask_restplus import fields, inputs
-from flask_restplus import Resource, Api, apidoc
+from flask_restplus import Resource, Api
 
 from jitenshea import controller
 from jitenshea.webapp import app
@@ -147,7 +147,7 @@ daily_profile_parser.add_argument("window", required=False, type=int, default=30
 
 @app.route('/doc/')
 def swagger_ui():
-    return apidoc.ui_for(api)
+    return render_template("swagger-ui.html")
 
 @api.route("/city")
 class City(Resource):
