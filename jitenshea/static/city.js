@@ -81,11 +81,11 @@ $(document).ready(function() {
 
 // Barplot of most important transactions (day before today)
 $(document).ready(function() {
-  var day = '2017-07-22';
+  // var day = '2017-07-22';
   // day before today
-  // var yesterday = new Date()
-  // yesterday.setDate(yesterday.getDate() - 1);
-  // console.log(yesterday.toISOString().substring(0, 10));
+  var yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1);
+  console.log(yesterday.toISOString().substring(0, 10));
   var stations_num = 10;
   var url = cityurl("cityDailyTransactions")
       + "/daily/station?limit="+ stations_num

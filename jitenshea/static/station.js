@@ -2,6 +2,8 @@
 
 
 // Station summary
+// TODO: handle the case when the ID does not exist with an error func callback
+// in the GET jQuery
 $(document).ready(function() {
   var station_id = document.getElementById("stationSummary").getAttribute("station_id");
   $.get(cityurl("stationSummary") + "/station/" + station_id, function (content) {
@@ -24,6 +26,7 @@ function stationIdFromURL() {
 }
 
 // Map centered to the station
+// TODO: handle the case when the station ID does not exist
 function stationsMap(map, data) {
   var OSM_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -84,12 +87,13 @@ $(document).ready(function() {
   var start = '2017-07-29'
   var stop = '2017-07-31';
   // day before today
-  // var yesterday = new Date()
-  // yesterday.setDate(yesterday.getDate() - 1);
-  // console.log(yesterday.toISOString().substring(0, 10));
+  var yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1);
+  console.log(yesterday.toISOString().substring(0, 10));
   var url = cityurl("stationTimeseries") + "/timeseries/station/" + station_id
       + "?start=" + start + "&stop=" + stop;
   $.get(url, function(content) {
+    console.log(content);
     var station_name = content.data[0].name;
     var date = content.data[0].ts;
     var stands = date.map(function(t, i) {
