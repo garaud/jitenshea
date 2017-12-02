@@ -16,5 +16,4 @@ schema = bordeaux
 table = timeserie
 daily_transaction = daily_transaction
 # API Key
-# key = QHUHHRI7HD
-key = 3ZNLOXJS4R
+key = QHUHHRI7HD
