@@ -31,6 +31,8 @@ A configuration file sample can be found at the root directory
 
 It is used for the database access, some tokens for API, etc.
 
+For the wep application, you can launch `bower` to install Javascript and CSS dependencies.
+
 ## Requirements
 
 PostgreSQL database with PostGIS. You must have the `shp2pgsql` command.
