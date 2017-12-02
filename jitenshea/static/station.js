@@ -83,13 +83,14 @@ $(document).ready(function() {
 // Timeseries plot
 $(document).ready(function() {
   var station_id = document.getElementById("stationTimeseries").getAttribute("station_id");
-  // Only plot two days.
-  var start = '2017-07-29'
-  var stop = '2017-07-31';
-  // day before today
-  var yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1);
-  console.log(yesterday.toISOString().substring(0, 10));
+  // Only plot seven days.
+  var stop = new Date();
+  var start = new Date(stop);
+  start.setDate(start.getDate() - 7);
+  start = start.toISOString().substring(0, 10);
+  stop = stop.toISOString().substring(0, 10);
+  // console.log("start: "+ start);
+  // console.log("stop: " + stop);
   var url = cityurl("stationTimeseries") + "/timeseries/station/" + station_id
       + "?start=" + start + "&stop=" + stop;
   $.get(url, function(content) {
@@ -130,12 +131,9 @@ $(document).ready(function() {
 $(document).ready(function() {
   var station_id = document.getElementById("stationDailyTransactions").getAttribute("station_id");
   // Only plot seven days.
-  var day = '2017-07-29'
   var window = 7;
   // day before today
-  // var yesterday = new Date()
-  // yesterday.setDate(yesterday.getDate() - 1);
-  // console.log(yesterday.toISOString().substring(0, 10));
+  var day = getYesterday();
   var url = cityurl("stationDailyTransactions") + "/daily/station/" + station_id
       + "?date=" + day + "&window=" + window;
   $.get(url, function(content) {
@@ -172,11 +170,8 @@ $(document).ready(function() {
 // Day profile
 $(document).ready(function() {
   var station_id = document.getElementById("stationProfileDay").getAttribute("station_id");
-  var day = '2017-07-29'
   // day before today
-  // var yesterday = new Date()
-  // yesterday.setDate(yesterday.getDate() - 1);
-  // console.log(yesterday.toISOString().substring(0, 10));
+  var day = getYesterday();
   var url = cityurl("stationProfileDay") + "/profile/hourly/station/" + station_id
       + "?date=" + day;
   $.get(url, function(content) {
@@ -213,11 +208,8 @@ $(document).ready(function() {
 // Week profile
 $(document).ready(function() {
   var station_id = document.getElementById("stationProfileWeek").getAttribute("station_id");
-  var day = '2017-07-29'
   // day before today
-  // var yesterday = new Date()
-  // yesterday.setDate(yesterday.getDate() - 1);
-  // console.log(yesterday.toISOString().substring(0, 10));
+  var day = getYesterday();
   var url = cityurl("stationProfileWeek") + "/profile/daily/station/" + station_id
       + "?date=" + day;
   $.get(url, function(content) {
