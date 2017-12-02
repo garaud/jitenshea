@@ -6,7 +6,7 @@ Jitensha (bicycle) + Shea (share) = Jitenshea
 
 Analyze bikes sharing station data some cities where there are Open Data.
 
-You have to parts in the project:
+You have two parts in this project:
 
 * a data pipeline and data processing with [luigi](http://luigi.readthedocs.io/)
   to get, transform and store data
