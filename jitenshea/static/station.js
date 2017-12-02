@@ -103,7 +103,25 @@ $(document).ready(function() {
     var bikes = date.map(function(t, i) {
       return [Date.parse(t), content.data[0].available_bike[i]];
     });
-    Highcharts.chart('stationTimeseries', {
+    Highcharts.stockChart('stationTimeseries', {
+      // use to select the time window
+      rangeSelector: {
+        buttons: [{
+          type: 'day',
+          count: 1,
+          text: '1D'
+        }, {
+          type: 'day',
+          count: 2,
+          text: '2D'
+        }, {
+          type: 'all',
+          count: 1,
+          text: 'All'
+        }],
+             selected: 0,
+        inputEnabled: false
+      },
       title: {
         text: 'Timeseries for the station ' + station_name
       },
@@ -116,11 +134,17 @@ $(document).ready(function() {
         type: "datetime"
       },
       series: [{
-        "name": "stands",
-        "data": stands
+        name: "stands",
+        data: stands,
+        tooltip: {
+          valueDecimals: 1
+        }
       }, {
-        "name": "bikes",
-        "data": bikes
+        name: "bikes",
+        data: bikes,
+        tooltip: {
+          valueDecimals: 1
+        }
       }]
     } );
   } );
