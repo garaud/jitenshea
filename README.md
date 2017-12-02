@@ -47,6 +47,7 @@ PostgreSQL database with PostGIS. You must have the `shp2pgsql` command.
 * luigi
 * sh
 * psycopg2
+* sqlalchemy
 * flask-restplus
 * daiquiri
 
