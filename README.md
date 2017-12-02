@@ -1,5 +1,7 @@
 # Jitenshea: bicycle-sharing data analysis
 
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Jitensha (bicycle) + Shea (share) = Jitenshea
 
 Analyze bikes sharing station data some cities where there Open Data.
