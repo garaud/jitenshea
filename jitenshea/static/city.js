@@ -84,6 +84,7 @@ $(document).ready(function() {
   // day before today
   var day = getYesterday();
   var stations_num = 10;
+  var city = document.getElementById("cityDailyTransactions").getAttribute("city");
   var url = cityurl("cityDailyTransactions")
       + "/daily/station?limit="+ stations_num
       + "&by=value&date=" + day;
@@ -121,6 +122,15 @@ $(document).ready(function() {
           colorByPoint: true,
           colors: cmap,
         },
+        // Make bar clickable to the station
+        series: {
+          cursor: 'pointer',
+          events: {
+            click: function(event) {
+              window.location.href = '/' + city + '/' + content.data[this.index].id;
+            }
+          }
+        }
       },
       series: [{
         name: "transactions",
