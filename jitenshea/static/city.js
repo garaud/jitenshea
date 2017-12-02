@@ -94,9 +94,11 @@ $(document).ready(function() {
     // value to compute the color according to the value [0,1]
     var cmax = content.data[0].value;
     var cmin = content.data[stations_num - 1].value;
+    // you don't want to have a too clear color for low values
+    cmin = cmin - 0.3*cmin;
     var cmap = values.map(function(x) {
       var scale = (x - cmin) / (cmax - cmin)
-      return d3.interpolateYlGnBu(scale);
+      return d3.interpolateGnBu(scale);
     });
     Highcharts.chart('cityDailyTransactions', {
       chart: {
