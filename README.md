@@ -11,6 +11,8 @@ You have to parts in the project:
 
 * Web application to get and visualize some data through a REST API
 
+![screenshot](./webapp-screenshot.png)
+
 ## Data
 
 Open Data from French cities Bordeaux and Lyon:
