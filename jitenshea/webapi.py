@@ -107,7 +107,7 @@ station_list_parser.add_argument("geojson", required=False, default=False, dest=
 
 daily_parser = api.parser()
 daily_parser.add_argument("date", required=True, dest="date", location="args",
-                          help="day of the transactions")
+                          help="day of the transactions (YYYY-MM-DD)")
 daily_parser.add_argument("window", required=False, type=int, default=0, dest="window",
                           location="args", help="How many days?")
 daily_parser.add_argument("backward", required=False, type=inputs.boolean, default=True, dest="backward",
@@ -119,7 +119,7 @@ daily_list_parser.add_argument("limit", required=False, default=20, dest='limit'
 daily_list_parser.add_argument("by", required=False, dest='order_by', default='station',
                                location='args', help="Order by 'station' or 'value'")
 daily_list_parser.add_argument("date", required=True, dest="date", location="args",
-                               help="day of the transactions")
+                               help="day of the transactions (YYYY-MM-DD)")
 daily_list_parser.add_argument("window", required=False, type=int, default=0,
                                dest="window", location="args", help="How many days?")
 daily_list_parser.add_argument("backward", required=False, type=inputs.boolean,
@@ -134,13 +134,13 @@ timeseries_parser.add_argument("stop", required=True, dest="stop", location="arg
 
 hourly_profile_parser = api.parser()
 hourly_profile_parser.add_argument("date", required=True, dest="date", location="args",
-                                   help="day of the transactions")
+                                   help="day of the transactions (YYYY-MM-DD)")
 hourly_profile_parser.add_argument("window", required=False, type=int, default=7, dest="window",
                                    location="args", help="How many backward days?")
 
 daily_profile_parser = api.parser()
 daily_profile_parser.add_argument("date", required=True, dest="date", location="args",
-                                  help="day of the transactions")
+                                  help="day of the transactions (YYYY-MM-DD)")
 daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
                                    location="args", help="How many backward days?")
 
