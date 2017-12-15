@@ -125,9 +125,11 @@ $(document).ready(function() {
         // Make bar clickable to the station
         series: {
           cursor: 'pointer',
-          events: {
-            click: function(event) {
-              window.location.href = '/' + city + '/' + content.data[this.index].id;
+          point: {
+            events: {
+              click: function(event) {
+                window.location.href = '/' + city + '/' + content.data[this.index].id;
+              }
             }
           }
         }
