@@ -5,7 +5,7 @@
 // TODO: handle the case when the ID does not exist with an error func callback
 // in the GET jQuery
 $(document).ready(function() {
-  var station_id = document.getElementById("stationSummary").getAttribute("station_id");
+  var station_id = document.getElementById("stationSummary").dataset.stationId;
   $.get(cityurl("stationSummary") + "/station/" + station_id, function (content) {
     var station = content.data[0];
     $("#titlePanel").append("#" + station.id + " " + station.name + " in " + station.city);
@@ -64,7 +64,7 @@ function stationsMap(map, data) {
 // Map centered to the station with Leaflet
 $(document).ready(function() {
   var station_map = L.map("stationMap");
-  var city = document.getElementById("stationMap").getAttribute("city");
+  var city = document.getElementById("stationMap").dataset.city;
   var geostations = sessionStorage.getItem(city);
   if (geostations == null) {
     $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
@@ -82,7 +82,7 @@ $(document).ready(function() {
 
 // Timeseries plot
 $(document).ready(function() {
-  var station_id = document.getElementById("stationTimeseries").getAttribute("station_id");
+  var station_id = document.getElementById("stationTimeseries").dataset.stationId;
   // Only plot seven days.
   var stop = new Date();
   var start = new Date(stop);
@@ -153,7 +153,7 @@ $(document).ready(function() {
 
 // Daily transactions plot
 $(document).ready(function() {
-  var station_id = document.getElementById("stationDailyTransactions").getAttribute("station_id");
+  var station_id = document.getElementById("stationDailyTransactions").dataset.stationId;
   // Only plot seven days.
   var window = 7;
   // day before today
@@ -193,7 +193,7 @@ $(document).ready(function() {
 
 // Day profile
 $(document).ready(function() {
-  var station_id = document.getElementById("stationProfileDay").getAttribute("station_id");
+  var station_id = document.getElementById("stationProfileDay").dataset.stationId;
   // day before today
   var day = getYesterday();
   var url = cityurl("stationProfileDay") + "/profile/hourly/station/" + station_id
@@ -231,7 +231,7 @@ $(document).ready(function() {
 
 // Week profile
 $(document).ready(function() {
-  var station_id = document.getElementById("stationProfileWeek").getAttribute("station_id");
+  var station_id = document.getElementById("stationProfileWeek").dataset.stationId;
   // day before today
   var day = getYesterday();
   var url = cityurl("stationProfileWeek") + "/profile/daily/station/" + station_id

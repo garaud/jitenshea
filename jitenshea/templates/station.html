@@ -2,8 +2,8 @@
 
 {% block content %}
 
-<div class="container" id="stationSummary" city="{{city}}"
-     station_id="{{station_id}}">
+<div class="container" id="stationSummary" data-city="{{city}}"
+     data-station-id="{{station_id}}">
   <div class="container">
     <div class="row">
       <div class="col-md-4">
@@ -20,9 +20,7 @@
           </ul>
         </div>
       </div>
-      <div class="col-md-8" id="stationMap" city="{{city}}" style="height: 280px;">
-      <!-- <div class="col-md-8" id="stationMap" city="{{city}}"> -->
-        <!-- <h3>A Map Here...</h3> -->
+      <div class="col-md-8" id="stationMap" data-city="{{city}}" style="height: 280px;">
       </div>
     </div>
   </div>
@@ -36,7 +34,7 @@
     <div class="row">
       <div class="col-md-6">
         <h3>Hourly</h3>
-        <div id="stationProfileDay" city="{{city}}" station_id="{{station_id}}"
+        <div id="stationProfileDay" data-city="{{city}}" data-station-id="{{station_id}}"
              style="width: 100%; height:300px;">
         </div>
       </div>
@@ -44,7 +42,7 @@
       <div class="col-md-6">
 
         <h3>Daily</h3>
-        <div id="stationProfileWeek" city="{{city}}" station_id="{{station_id}}"
+        <div id="stationProfileWeek" data-city="{{city}}" data-station-id="{{station_id}}"
              style="width: 100%; height:300px;">
         </div>
       </div>
@@ -53,7 +51,7 @@
 
   <h2>Timeseries</h2>
 
-  <div id="stationTimeseries" city="{{city}}" station_id="{{station_id}}"
+  <div id="stationTimeseries" data-city="{{city}}" data-station-id="{{station_id}}"
        style="width: 100%; height:400px;">
   </div>
 
@@ -61,7 +59,7 @@
 
   <p>Number of transactions these previous days.</p>
 
-  <div id="stationDailyTransactions" city="{{city}}" station_id="{{station_id}}"
+  <div id="stationDailyTransactions" data-city="{{city}}" data-station-id="{{station_id}}"
        style="width: 100%; height:400px;">
   </div>
 

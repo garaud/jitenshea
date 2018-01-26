@@ -7,7 +7,8 @@
 // The stations list item will be used for each station page (a tiny
 // station-centered map)
 $(document).ready(function() {
-  var city = document.getElementById("citytable").getAttribute("city");
+  var element = document.getElementById("citytable");
+  var city = element.dataset.city;
   $('#citytable').DataTable( {
     scrollY:        '80vh',
     scrollCollapse: true,
@@ -64,7 +65,7 @@ function stationsMap(map, data) {
 //    'setView' function.
 $(document).ready(function() {
   var station_map = L.map("stationMap");
-  var city = document.getElementById("stationMap").getAttribute("city");
+  var city = document.getElementById("stationMap").dataset.city;
   var geostations = sessionStorage.getItem(city);
   if (geostations == null) {
     $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
@@ -84,13 +85,18 @@ $(document).ready(function() {
   // day before today
   var day = getYesterday();
   var stations_num = 10;
-  var city = document.getElementById("cityDailyTransactions").getAttribute("city");
+  var element = document.getElementById("cityDailyTransactions");
+  var city = element.dataset.city;
   var url = cityurl("cityDailyTransactions")
       + "/daily/station?limit="+ stations_num
       + "&by=value&date=" + day;
   // var cmap = d3.interpolateRdBu();
   $.get(url, function(content) {
     // transactions values
+    if (content.length === 0) {
+      console.log("WARNING: no daily transaction data for "+ day);
+      return null;
+    }
     var values = content.data.map(function(x) {return x.value;});
     // value to compute the color according to the value [0,1]
     var cmax = content.data[0].value;
