@@ -6,7 +6,7 @@
 import daiquiri
 import logging
 
-from flask import Flask, render_template
+from flask import Flask, render_template, abort
 
 
 daiquiri.setup(level=logging.INFO)
