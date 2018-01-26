@@ -2,6 +2,8 @@
 
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+In Japanese:
+
 Jitensha (bicycle) + Shea (share) = Jitenshea
 
 Analyze bikes sharing station data some cities where there are Open Data.
