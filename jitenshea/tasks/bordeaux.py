@@ -29,7 +29,7 @@ import requests
 import pandas as pd
 
 import luigi
-import luigi.postgres
+from luigi.contrib.postgres import CopyToTable, PostgresQuery
 from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
@@ -134,7 +134,7 @@ class UnzipTask(luigi.Task):
             zip_ref.close()
 
 
-class CreateSchema(luigi.postgres.PostgresQuery):
+class CreateSchema(PostgresQuery):
     host = config['database']['host']
     database = config['database']['dbname']
     user = config['database']['user']
@@ -267,7 +267,7 @@ class BicycleStationXMLtoCSV(luigi.Task):
             df[self.keepcols].to_csv(fobj, index=False)
 
 
-class BicycleStationDatabase(luigi.postgres.CopyToTable):
+class BicycleStationDatabase(CopyToTable):
     """Insert VCUB stations data into a PostgreSQL table
     """
     timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
@@ -330,7 +330,7 @@ class AggregateTransaction(luigi.Task):
             transactions.to_csv(fobj, index=False)
 
 
-class AggregateVCUBTransactionIntoDB(luigi.postgres.CopyToTable):
+class AggregateVCUBTransactionIntoDB(CopyToTable):
     """Aggregate bicycle-share transactions data into the database.
     """
     date = luigi.DateParameter(default=yesterday())

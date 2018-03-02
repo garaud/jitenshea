@@ -18,7 +18,7 @@ import sh
 import requests
 
 import luigi
-import luigi.postgres
+from luigi.contrib.postgres import CopyToTable, PostgresQuery
 from luigi.format import UTF8, MixedUnicodeBytes
 
 import pandas as pd
@@ -110,7 +110,7 @@ class UnzipTask(luigi.Task):
             zip_ref.close()
 
 
-class CreateSchema(luigi.postgres.PostgresQuery):
+class CreateSchema(PostgresQuery):
     host = config['database']['host']
     database = config['database']['dbname']
     user = config['database']['user']
@@ -224,7 +224,7 @@ class VelovStationJSONtoCSV(luigi.Task):
             df[self.keepcols].to_csv(fobj, index=False)
 
 
-class VelovStationDatabase(luigi.postgres.CopyToTable):
+class VelovStationDatabase(CopyToTable):
     """Insert Velov stations data into a PostgreSQL table
     """
     timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
@@ -290,7 +290,7 @@ class AggregateTransaction(luigi.Task):
             transactions.to_csv(fobj, index=False)
 
 
-class AggregateLyonTransactionIntoDB(luigi.postgres.CopyToTable):
+class AggregateLyonTransactionIntoDB(CopyToTable):
     """Aggregate bicycle-share transactions data into the database.
     """
     date = luigi.DateParameter(default=yesterday())
