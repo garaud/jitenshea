@@ -5,8 +5,8 @@
 Note: the 'ident' field which should be used for an unique id for each station
 is different when you load the layer TB_STVEL_P and CI_VCUB_P.
 
-  - TB_STVEL_P: bicyle-station geoloc
-  - CI_VCUB_P: bicyle-station real-time occupation data
+  - TB_STVEL_P: bicycle-station geoloc
+  - CI_VCUB_P: bicycle-station real-time occupation data
 
 So, if you want to merge these data, use the 'numstat' from TB_STVEL_P and
 'ident' from CI_VCUB_P.
