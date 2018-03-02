@@ -37,6 +37,14 @@ A configuration file sample can be found at the root directory
 
 It is used for the database access, some tokens for API, etc.
 
+In the case of Bordeaux data, a key is needed to get the data on the open data
+portal. The only step for obtaining such a key is to subscribe to
+the [portal](https://data.bordeaux-metropole.fr/key).
+
+If you want to gather weather data, a subscription
+to [Openweather API](https://home.openweathermap.org/users/sign_in) is
+required.
+
 For the wep application, you can launch `bower` to install Javascript and CSS dependencies.
 
 ## Requirements
