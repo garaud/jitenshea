@@ -27,12 +27,20 @@ TimeWindow = namedtuple('TimeWindow', ['start', 'stop', 'order_reference_date'])
 
 
 def processing_daily_data(rset, window):
-    """Re arrange when it's necessary the daily transactions data
+    """Re arrange the daily transactions data when it's necessary
 
-    rset: ResultProxy by SQLAlchemy
+    Parameters
+    ----------
+    rset : sqlalchemy.engine.result.ResultProxy
         Result of a SQL query
+    window : integer
+        Time windows
 
-    Return a list of dicts
+    Returns
+    -------
+    list of dicts
+        Rearranged list of transactions
+
     """
     if not rset:
         return {"data": []}
@@ -53,7 +61,16 @@ def processing_daily_data(rset, window):
 def processing_timeseries(rset):
     """Processing the result of a timeseries SQL query
 
-    Return a list of dicts
+    Parameters
+    ----------
+    rset : sqlalchemy.engine.result.ResultProxy
+        Result of a SQL query
+
+    Returns
+    -------
+    a list of dicts
+        Bike and stand availability timeseries for given stations
+
     """
     if not rset:
         return []
@@ -70,19 +87,23 @@ def processing_timeseries(rset):
 
 
 def time_window(day, window, backward):
-    """Return a TimeWindow
-
-    Give a start and stop according to the size of the window and the backward
-    parameter. The order_reference_date is used to fix the values date to sort
+    """Give a start and stop according to the size of `window` and the `backward`
+    parameter. The `order_reference_date` is used to fix the date values to sort
     station by values.
 
-    day: date
+    Parameters
+    ----------
+    day : date
        Start or stop according to the backward parameter
-    window: int
+    window : int
        Number of day before (resp. after) the 'day' parameter
-    backward: boolean
+    backward : boolean
 
-    Return TimeWindow
+    Returns
+    -------
+    TimeWindow
+        Ttime between start and stop dates, ordered either by start or stop
+
     """
     stop = day
     sign = 1 if backward else -1
@@ -96,6 +117,16 @@ def time_window(day, window, backward):
 
 def station_geojson(stations):
     """Process station data into GeoJSON
+
+    Parameters
+    ----------
+    stations : list of integer
+        Stations IDs
+
+    Returns
+    -------
+    dict
+        Stations into the GeoJSON format
     """
     result = []
     for data in stations:
@@ -147,11 +178,20 @@ def clustered_station_geojson(stations):
 
 
 def cities():
-    "List of cities"
+    """Manually build the list of considered cities
+
+    TODO: recover the number of stations automatically by requesting the database
     # Lyon
     # select count(*) from lyon.pvostationvelov;
     # Bdx
     # select count(*) from bordeaux.vcub_station;
+
+    Returns
+    -------
+    dict
+        List of cities depicted into the API
+
+    """
     return {"data": [{'city': 'lyon',
                       'country': 'france',
                       'stations': 348},
@@ -161,13 +201,18 @@ def cities():
 
 
 def stations(city, limit, geojson):
-    """List of bicycle stations
+    """Get a set of the `limit` first bicycle stations in `city`; if `geojson` is True, handle GeoJSON format
 
-    city: string
-    limit: int
-    geojson: boolean
+    Parameters
+    ----------
+    city : string
+    limit : int
+    geojson : boolean
 
-    Return a list of dict, one dict by bicycle station
+    Returns
+    -------
+    a list of dict
+        One dict by bicycle station
     """
     query = _query_stations(city, limit)
     eng = db()
@@ -199,7 +244,6 @@ def specific_stations(city, ids):
         return []
     return {"data": [dict(zip(x.keys(), x)) for x in rset]}
 
-
 def _query_stations(city, limit=20):
     """Query to get the list of bicycle stations
 
@@ -225,9 +269,17 @@ def _query_stations(city, limit=20):
                table=config['database']['stations'],
                limit=limit)
 
-
 def daily_query(city):
-    """SQL query to get daily transactions according to the city
+    """SQL query to get daily transactions according to `city`
+
+    Parameters
+    ----------
+    city : str
+
+    Returns
+    -------
+    str
+        SQL request
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
@@ -245,6 +297,20 @@ def daily_query(city):
 
 def daily_query_stations(city, limit, order_by='station'):
     """SQL query to get daily transactions for all stations
+
+    Parameters
+    ----------
+    city : string
+        City to consider, either 'bordeaux' or 'lyon'
+    limit : integer
+        Number of daily transactions to consider
+    order_by : str
+        Sorting attribute, default is 'station'
+
+    Returns
+    -------
+    str
+        SQL request
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
@@ -276,18 +342,23 @@ def daily_query_stations(city, limit, order_by='station'):
 
 
 def daily_transaction(city, station_ids, day, window=0, backward=True):
-    """Retrieve the daily transaction for the Bordeaux stations
+    """Retrieve the daily transactions for the stations `station_ids` in `city`
 
-    stations_ids: list of int
-        List of ids station
-    day: date
-        Data for this specific date
-    window: int (0 by default)
-        Number of days to look around the specific date
-    backward: bool (True by default)
-        Get data before the date or not, according to the window number
+    Parameters
+    ----------
+    stations_ids : list of int
+        Station IDs
+    day : date
+        Date around which transactions must be focused
+    window : int
+        Number of days to look around (default=0)
+    backward : bool
+        If True, get data before the date (default=True)
 
-    Return a list of dicts
+    Returns
+    -------
+    a list of dicts
+        Daily transactions (number of transactions by station and by day) in `city`
     """
     window = time_window(day, window, backward)
     query = daily_query(city)
@@ -299,19 +370,28 @@ def daily_transaction(city, station_ids, day, window=0, backward=True):
 
 
 def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
-    """Retrieve the daily transaction for the Bordeaux stations
+    """Retrieve daily transactions for the `limit` first stations in `city`
 
-    city: str
-    day: date
-        Data for this specific date
-    limit: int
-    order_by: str
-    window: int (0 by default)
-        Number of days to look around the specific date
-    backward: bool (True by default)
-        Get data before the date or not, according to the window number
+    Parameters
+    ----------
+    city : str
+        City to consider, either 'bordeaux' or 'lyon'
+    day : date
+        Date around which transactions must be focused
+    limit : int
+        Number of transactions to consider
+    order_by : str
+        Transaction sorting attribute
+    window : int
+        Number of days to consider around `date` (default=0)
+    backward: bool
+        If True, get data before the date (default=True)
 
-    Return a list of dicts
+    Returns
+    -------
+    a list of dicts
+        Daily transactions (number of transactions by station and by day) in `city`
+
     """
     window = time_window(day, window, backward)
     query = daily_query_stations(city, limit, order_by)
@@ -322,7 +402,25 @@ def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
 
 
 def timeseries(city, station_ids, start, stop):
-    """Get timeseries data between two dates for a specific city and a list of station ids
+    """Get timeseries data between dates `start` and `stop` for stations
+    `station_ids` in `city`
+
+    Parameters
+    ----------
+    city : str
+        City to consider, either 'bordeaux' or 'lyon'
+    station_ids : list of integer
+        Bike stations to consider
+    start : date
+        Beginning of the period
+    stop : date
+        End of the period
+
+    Returns
+    -------
+    list of dicts
+        Bike and stand availability timeseries
+
     """
     query = """SELECT T.*
       ,S.name as name
@@ -340,12 +438,18 @@ def timeseries(city, station_ids, start, stop):
 
 
 def hourly_process(df):
-    """DataFrame with timeseries into a hourly transaction profile
+    """Timeseries into a hourly transaction profile
 
-    df: DataFrame
-        timeseries bike data for one specific station
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Timeseries bike data for one specific station
 
-    Return a DataFrame with the transactions sum & mean for each hour
+    Returns
+    -------
+    pandas.DataFrame
+        Transactions sum & mean for each hour
+
     """
     df = df.copy().set_index('ts')
     transaction = (df['available_bikes']
@@ -360,19 +464,29 @@ def hourly_process(df):
 
 
 def hourly_profile(city, station_ids, day, window):
-    """Return the number of transaction per hour
+    """Compute the number of transactions per hour
 
-    city: str
-    station_ids: list
-    day: date
-    window: int
-        number of days
+    Note: for `window` parameter, quite annoying to convert np.int64,
+    np.float64 from the DataFrame to JSON, even if you convert the DataFrame to
+    dict. So, I use the .tolist() np.array method for the index and each
+    column.
 
-    Note: quite annoying to convert np.int64, np.float64 from the DataFrame to
-    JSON, even if you convert the DataFrame to dict. So, I use the .tolist()
-    np.array method for the index and each column.
+    Parameters
+    ----------
+    city : str
+        City to consider, either 'bordeaux' or 'lyon'
+    station_ids : list of integer
+        Shared bike stations IDs
+    day : date
+        Day around which transactions must be scanned
+    window : int
+        Number of days to consider around `date`
 
-    Return a list of dicts
+    Returns
+    -------
+    a list of dicts
+        Per-hour transactions, for given `city` and `station_ids` and dates
+
     """
     start = day - timedelta(window)
     result = []
@@ -391,10 +505,15 @@ def hourly_profile(city, station_ids, day, window):
 def daily_profile_process(df):
     """DataFrame with dates into a daily transaction profile
 
-    df: DataFrame
-        timeseries bike data for one specific station
+    Parameters
+    ----------
+    df : pandas.DataFrame - bike data timeseries for one specific station
 
-    Return a DataFrame with the transactions sum & mean for each day of the week
+    Returns
+    -------
+    pandas.DataFrame
+        Transactions sum & mean for each day of the week
+
     """
     df = df.copy()
     df['weekday'] = df['date'].apply(lambda x: x.weekday())
@@ -402,19 +521,26 @@ def daily_profile_process(df):
 
 
 def daily_profile(city, station_ids, day, window):
-    """Return the number of transaction per day of week
+    """Compute the number of transaction per week day
 
-    city: str
-    stations_ids: list
-    day: date
-    window: int
-        number of days
+    Note: for `window` parameter, it is quite annoying to convert np.int64,
+    np.float64 from the DataFrame to JSON, even if you convert the DataFrame to
+    dict. So, I use the .tolist() np.array method for the index and each
+    column.
 
-    Note: quite annoying to convert np.int64, np.float64 from the DataFrame to
-    JSON, even if you convert the DataFrame to dict. So, I use the .tolist()
-    np.array method for the index and each column.
+    Parameters
+    ----------
+    city : str
+    stations_ids : list
+    day : date
+    window : int
+        Number of days
 
-    Return a list of dicts
+    Returns
+    -------
+    a list of dicts
+        Number of transaction per week day
+
     """
     result = []
     for data in daily_transaction(city, station_ids, day, window)["data"]:

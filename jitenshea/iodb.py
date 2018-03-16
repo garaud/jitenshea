@@ -15,9 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 def psql_args():
-    """Return the arguments for the command psql with some db parameters
+    """Return the arguments for the command psql with some db parameters: host,
+    database, user, (pwd,) port
 
-    Return a list of str
+    Return
+    ------
+    a list of str
     """
     psql = ['-h', config['database']['host'], '-d', config['database']['dbname'], '-U',
             config['database']['user'], '-p',  config['database']['port']]
@@ -28,15 +31,20 @@ def psql_args():
 def shp2pgsql_args(projection, filename, tablename, encoding=None):
     """Return the arguments for the command shp2pgsql
 
-    projection: str
-       Projection SRID no.
-    filename: str
-       Shapefile
-    tablename: str
-       Name of the SQL table
-    encoding: str (default None)
+    Parameters
+    ----------
+    projection : str
+        Projection SRID no.
+    filename : str
+        Shapefile
+    tablename : str
+        Name of the SQL table
+    encoding : str
+        (default None)
 
-    Return a list of str
+    Return
+    ------
+    a list of str
     """
     logger.info("commands line for shp2pgsql with the file '%s'", filename)
     shp2pgsql = ['-cID']
@@ -48,7 +56,12 @@ def shp2pgsql_args(projection, filename, tablename, encoding=None):
     return shp2pgsql
 
 def db():
-    """Return a SQLAlchemy engine with Postgres connection parameters
+    """Create a SQLAlchemy engine with Postgres connection parameters contained
+    in config.ini file
+
+    Return
+    ------
+    SQLAlchemy engine
     """
     database = config['database']
     if database.get('password') is not None:

@@ -37,7 +37,14 @@ CITY_ID = {'bordeaux': 3031582,
 def weather(city, datatype):
     """Get the weather (current or forecast) from the OpenWeatherMap API.
 
-    Return a Response object.
+    Parameters
+    ----------
+    city : str
+    datatype : datetime.datetime
+    
+    Returns
+    -------
+    Response object
     """
     if datatype not in ('weather', 'forecast'):
         raise ValueError("'{}' weather API datatype not supported.".format(datatype))
@@ -51,6 +58,20 @@ def weather(city, datatype):
 
 
 class CurrentCityWeatherJson(luigi.Task):
+    """Luigi task for getting weather information for a specific place in a
+    *json* file
+
+    :warning: Need the definition of a API key stored in
+    `jitenshea/config.ini`, see [OpenWeather
+    website](https://openweathermap.org/api) for details
+        
+    Inherits from ̀luigi.Task`
+        
+    Attributes
+    ----------
+    timestamp : datetime.datetime
+    city : str
+    """
     timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=10)
     city = luigi.Parameter()
 
@@ -72,6 +93,20 @@ class CurrentCityWeatherJson(luigi.Task):
 
 
 class ForecastCityWeatherJson(luigi.Task):
+    """Luigi task for getting weather forecasts at a specific date and place in
+    a *json* file
+
+    :warning: Need the definition of a API key stored in
+    `jitenshea/config.ini`, see [OpenWeather
+    website](https://openweathermap.org/api) for details
+        
+    Inherits from ̀luigi.Task`
+    
+    Attributes
+    ----------
+    timestamp : datetime.datetime
+    city : str
+    """
     timestamp = luigi.DateHourParameter(default=dt.now())
     city = luigi.Parameter()
 
@@ -92,7 +127,21 @@ class ForecastCityWeatherJson(luigi.Task):
             fobj.write(resp.content)
 
 
-class CurrentCityWeatherCSV(luigi.Task):
+class CurrentCityWeatherCSV(luigi.Task): 
+    """Luigi task for getting weather information for a specific place in a
+    *csv* file
+
+    :warning: Need the definition of a API key stored in
+    `jitenshea/config.ini`, see [OpenWeather
+    website](https://openweathermap.org/api) for details
+        
+    Inherits from ̀luigi.Task`
+            
+    Attributes
+    ----------
+    timestamp : datetime.datetime
+    city : str
+    """
     timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=10)
     city = luigi.Parameter()
 
@@ -130,6 +179,20 @@ class CurrentCityWeatherCSV(luigi.Task):
 
 
 class ForecastCityWeatherCSV(luigi.Task):
+    """Luigi task for getting weather forecasts at a specific date and place in
+    a *csv* file
+
+    :warning: Need the definition of a API key stored in
+    `jitenshea/config.ini`, see [OpenWeather
+    website](https://openweathermap.org/api) for details
+        
+    Inherits from ̀luigi.Task`
+    
+    Attributes
+    ----------
+    timestamp : datetime.datetime
+    city : str
+    """
     timestamp = luigi.DateHourParameter(default=dt.now())
     city = luigi.Parameter()
 
