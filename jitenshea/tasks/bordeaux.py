@@ -363,17 +363,21 @@ class CreateClusteredStationTable(PostgresQuery):
     user = config['database']['user']
     password = None
     schema = luigi.Parameter()
-    table = luigi.Parameter()
+    tablename = luigi.Parameter()
     query = ("DROP TABLE IF EXISTS {schema}.{table};"
              "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
              "station_id int PRIMARY KEY,"
              "cluster_id INT"
              ");")
 
+    @property
+    def table(self):
+        return ".".join([self.schema, self.tablename])
+
     def run(self):
         connection = self.output().connect()
         cursor = connection.cursor()
-        sql = self.query.format(schema=self.schema, table=self.table)
+        sql = self.query.format(schema=self.schema, table=self.tablename)
         cursor.execute(sql)
         # Update marker table
         self.output().touch(connection)
@@ -389,7 +393,7 @@ class CreateCentroidTable(PostgresQuery):
     user = config['database']['user']
     password = None
     schema = luigi.Parameter()
-    table = luigi.Parameter()
+    tablename = luigi.Parameter()
     query = ("DROP TABLE IF EXISTS {schema}.{table};"
              "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
              "cluster_id int PRIMARY KEY,"
@@ -397,10 +401,14 @@ class CreateCentroidTable(PostgresQuery):
              "".join([", h"+str(i)+" float " for i in range(1, 24)]) +
              ");")
 
+    @property
+    def table(self):
+        return ".".join([self.schema, self.tablename])
+
     def run(self):
         connection = self.output().connect()
         cursor = connection.cursor()
-        sql = self.query.format(schema=self.schema, table=self.table)
+        sql = self.query.format(schema=self.schema, table=self.tablename)
         cursor.execute(sql)
         # Update marker table
         self.output().touch(connection)
@@ -408,7 +416,7 @@ class CreateCentroidTable(PostgresQuery):
         connection.commit()
         connection.close()
 
-class Clustering(PostgresQuery):
+class BordeauxClustering(PostgresQuery):
     """Compute clusters corresponding to bike availability on a given `city`
     between a `start` and an `end` date
     """
@@ -419,24 +427,28 @@ class Clustering(PostgresQuery):
     user = config['database']['user']
     password = None
     schema = config['bordeaux']['schema']
-    table = config['bordeaux']['table']
+    tablename = config['bordeaux']['table']
     query = ("SELECT gid, ts, available_bike "
              "FROM {}.{} "
              "WHERE ts >= %(start)s "
              "AND ts < %(stop)s;"
              "")
 
+    @property
+    def table(self):
+        return ".".join([self.schema, self.tablename])
+
     def requires(self):
         return {"timeseries": BicycleStationDatabase(),
                 "stations": CreateClusteredStationTable(schema=self.schema,
-                                                        table=config['bordeaux']['clustering']),
+                                                        tablename=config['bordeaux']['clustering']),
                 "centroids": CreateCentroidTable(schema=self.schema,
-                                                 table=config['bordeaux']['centroids'])}
+                                                 tablename=config['bordeaux']['centroids'])}
 
     def run(self):
         connection = self.output().connect()
         cursor = connection.cursor()
-        sql_query = self.query.format(self.schema, self.table)
+        sql_query = self.query.format(self.schema, self.tablename)
         df = pd.io.sql.read_sql_query(sql_query, connection,
                                       params={"start": self.start_date,
                                               "stop": self.end_date})
