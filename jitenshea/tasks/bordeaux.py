@@ -36,7 +36,7 @@ from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-
+from jitenshea.stats import compute_clusters
 
 # To get shapefile (in a zip).
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
@@ -440,33 +440,15 @@ class Clustering(PostgresQuery):
         df = pd.io.sql.read_sql_query(sql_query, connection,
                                       params={"start": self.start_date,
                                               "stop": self.end_date})
-        df.columns = ["station", "ts", "nb_bikes"]
-        max_bikes = df.groupby("station")["nb_bikes"].max()
-        unactive_stations = max_bikes[max_bikes==0].index.tolist()
-        active_station_mask = np.logical_not(df['station'].isin(unactive_stations))
-        df = df[active_station_mask]
-        df = (df.set_index("ts")
-              .groupby("station")["nb_bikes"]
-              .resample("5T")
-              .mean()
-              .bfill())
-        df = df.unstack(0)
-        df = df[df.index.weekday < 5]
-        df['hour'] = df.index.hour
-        df = df.groupby("hour").mean()
-        df_norm = df / df.max()
-        model = KMeans(n_clusters=4, random_state=0)
-        kmeans = model.fit(df_norm.T)
-        labels = pd.Series(kmeans.labels_)
-        df_labels = pd.DataFrame({"id_station": df.columns, "labels": kmeans.labels_})
-        df_centroids = pd.DataFrame(kmeans.cluster_centers_).reset_index()
+        df.columns = ["station_id", "ts", "nb_bikes"]
+        clusters = compute_clusters(df)
         insert_query = "INSERT INTO {} VALUES ({});"
-        for _, row in df_labels.iterrows():
+        for _, row in clusters["labels"].iterrows():
             table = ".".join([config["bordeaux"]["schema"],
                               config["bordeaux"]["clustering"]])
             values = ", ".join(str(rv) for rv in row.values)
             cursor.execute(insert_query.format(table, values))
-        for _, row in df_centroids.iterrows():
+        for _, row in clusters["centroids"].iterrows():
             table = ".".join([config["bordeaux"]["schema"],
                               config["bordeaux"]["centroids"]])
             values = ", ".join(str(rv) for rv in row.values)
