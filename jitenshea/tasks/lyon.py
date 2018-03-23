@@ -12,6 +12,8 @@ import json
 import zipfile
 from datetime import datetime as dt
 from datetime import date, timedelta
+import numpy as np
+from sklearn.cluster import KMeans
 
 import sh
 
@@ -315,3 +317,130 @@ class AggregateLyonTransactionIntoDB(CopyToTable):
 
     def requires(self):
         return AggregateTransaction(self.date)
+
+class CreateClusteredStationTable(PostgresQuery):
+    """
+    """
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    schema = luigi.Parameter()
+    table = luigi.Parameter()
+    query = ("DROP TABLE IF EXISTS {schema}.{table};"
+             "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
+             "station_id int PRIMARY KEY,"
+             "cluster_id INT"
+             ");")
+
+    def run(self):
+        connection = self.output().connect()
+        cursor = connection.cursor()
+        sql = self.query.format(schema=self.schema, table=self.table)
+        cursor.execute(sql)
+        # Update marker table
+        self.output().touch(connection)
+        # commit and close connection
+        connection.commit()
+        connection.close()
+
+class CreateCentroidTable(PostgresQuery):
+    """
+    """
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    schema = luigi.Parameter()
+    table = luigi.Parameter()
+    query = ("DROP TABLE IF EXISTS {schema}.{table};"
+             "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
+             "cluster_id int PRIMARY KEY,"
+             "h0 float" +
+             "".join([", h"+str(i)+" float " for i in range(1, 24)]) +
+             ");")
+
+    def run(self):
+        connection = self.output().connect()
+        cursor = connection.cursor()
+        sql = self.query.format(schema=self.schema, table=self.table)
+        cursor.execute(sql)
+        # Update marker table
+        self.output().touch(connection)
+        # commit and close connection
+        connection.commit()
+        connection.close()
+
+class Clustering(PostgresQuery):
+    """Compute clusters corresponding to bike availability on a given `city`
+    between a `start` and an `end` date
+    """
+    start_date = luigi.DateParameter(default=yesterday())
+    end_date = luigi.DateParameter(default=date.today())
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    schema = config['lyon']['schema']
+    table = config['lyon']['table']
+    query = ("SELECT number, last_update, available_bikes "
+             "FROM {}.{} "
+             "WHERE last_update >= %(start)s "
+             "AND last_update < %(stop)s;"
+             "")
+
+    def requires(self):
+        return {"timeseries": VelovStationDatabase(),
+                "stations": CreateClusteredStationTable(schema=self.schema,
+                                                        table=config['lyon']['clustering']),
+                "centroids": CreateCentroidTable(schema=self.schema,
+                                                 table=config['lyon']['centroids'])}
+
+    def run(self):
+        connection = self.output().connect()
+        cursor = connection.cursor()
+        sql_query = self.query.format(self.schema, self.table)
+        df = pd.io.sql.read_sql_query(sql_query, connection,
+                                      params={"start": self.start_date,
+                                              "stop": self.end_date})
+        df.columns = ["station", "ts", "nb_bikes"]
+        max_bikes = df.groupby("station")["nb_bikes"].max()
+        unactive_stations = max_bikes[max_bikes==0].index.tolist()
+        active_station_mask = np.logical_not(df['station'].isin(unactive_stations))
+        df = df[active_station_mask]
+        df = (df.set_index("ts")
+              .groupby("station")["nb_bikes"]
+              .resample("5T")
+              .mean()
+              .bfill())
+        df = df.unstack(0)
+        df = df[df.index.weekday < 5]
+        df['hour'] = df.index.hour
+        df = df.groupby("hour").mean()
+        df_norm = df / df.max()
+        model = KMeans(n_clusters=4, random_state=0)
+        kmeans = model.fit(df_norm.T)
+        labels = pd.Series(kmeans.labels_)
+        print(df.iloc[:5, :5])
+        df_labels = pd.DataFrame({"id_station": df.columns, "labels": kmeans.labels_})
+        print(df_labels.head(10))
+        df_centroids = pd.DataFrame(kmeans.cluster_centers_).reset_index()
+        print(df_centroids.head(10))
+        insert_query = "INSERT INTO {} VALUES ({});"
+        for _, row in df_labels.iterrows():
+            table = ".".join([config["lyon"]["schema"],
+                              config["lyon"]["clustering"]])
+            values = ", ".join(str(rv) for rv in row.values)
+            print(values)
+            cursor.execute(insert_query.format(table, values))
+        for _, row in df_centroids.iterrows():
+            table = ".".join([config["lyon"]["schema"],
+                              config["lyon"]["centroids"]])
+            values = ", ".join(str(rv) for rv in row.values)
+            print(values)
+            cursor.execute(insert_query.format(table, values))
+        # Update marker table
+        self.output().touch(connection)
+        # commit and close connection
+        connection.commit()
+        connection.close()
