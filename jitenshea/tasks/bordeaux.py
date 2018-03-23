@@ -149,9 +149,6 @@ class CreateSchema(PostgresQuery):
         connection = self.output().connect()
         cursor = connection.cursor()
         sql = self.query.format(schema=self.schema)
-        # print(sql)
-        # print(extract_tablename(self.table))
-        # logger.info('Executing query from task: {name}'.format(name=self.__class__))
         cursor.execute(sql)
         # Update marker table
         self.output().touch(connection)
@@ -461,23 +458,18 @@ class Clustering(PostgresQuery):
         model = KMeans(n_clusters=4, random_state=0)
         kmeans = model.fit(df_norm.T)
         labels = pd.Series(kmeans.labels_)
-        print(df.iloc[:5, :5])
         df_labels = pd.DataFrame({"id_station": df.columns, "labels": kmeans.labels_})
-        print(df_labels.head(10))
         df_centroids = pd.DataFrame(kmeans.cluster_centers_).reset_index()
-        print(df_centroids.head(10))
         insert_query = "INSERT INTO {} VALUES ({});"
         for _, row in df_labels.iterrows():
             table = ".".join([config["bordeaux"]["schema"],
                               config["bordeaux"]["clustering"]])
             values = ", ".join(str(rv) for rv in row.values)
-            print(values)
             cursor.execute(insert_query.format(table, values))
         for _, row in df_centroids.iterrows():
             table = ".".join([config["bordeaux"]["schema"],
                               config["bordeaux"]["centroids"]])
             values = ", ".join(str(rv) for rv in row.values)
-            print(values)
             cursor.execute(insert_query.format(table, values))
         # Update marker table
         self.output().touch(connection)
