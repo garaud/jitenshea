@@ -12,8 +12,8 @@
 
 <p>Available for the following cities
   <ul>
-    <li><a href="/bordeaux">Bordeaux</a> (France)</li>
-    <li><a href="/lyon">Lyon</a> (France)</li>
+    <li><a href="{{ url_for('city_view', city='bordeaux') }}">Bordeaux</a> (France)</li>
+    <li><a href="{{ url_for('city_view', city='lyon') }}">Lyon</a> (France)</li>
   </ul>
 </p>
 
@@ -27,7 +27,7 @@
     <li>Retrieve details for a given bicycle-sharing station: <tt>URL/api/lyon/station/1009</tt></li>
   </ul>
 
-  You also can read and try <a href="/doc/">the REST API</a> generated
+  You also can read and try <a href="{{ url_for('swagger_ui') }}">the REST API</a> generated
   by <a href="https://flask-restplus.readthedocs.org/en/stable/">Flask-RESTPlus</a>
   and <a href="http://swagger.io/">Swagger</a>.
 </p>
