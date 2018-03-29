@@ -28,6 +28,9 @@ def check_city(city):
 def index():
     return render_template("index.html")
 
+@app.route('/doc/')
+def swagger_ui():
+    return render_template("swagger-ui.html")
 
 @app.route("/<string:city>")
 def city_view(city):
@@ -39,7 +42,3 @@ def city_view(city):
 def station_view(city, station_id):
     check_city(city)
     return render_template('station.html', city=city, station_id=station_id)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)

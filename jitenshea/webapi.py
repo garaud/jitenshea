@@ -27,7 +27,6 @@ CITIES = ('lyon', 'bordeaux')
 daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea-webapi")
 
-
 class CustomJSONEncoder(JSONEncoder):
     """Custom JSON encoder to handle date
     """
@@ -145,9 +144,6 @@ daily_profile_parser.add_argument("window", required=False, type=int, default=30
                                    location="args", help="How many backward days?")
 
 
-@app.route('/doc/')
-def swagger_ui():
-    return render_template("swagger-ui.html")
 
 @api.route("/city")
 class City(Resource):
