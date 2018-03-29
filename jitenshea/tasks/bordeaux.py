@@ -35,6 +35,7 @@ from luigi.contrib.postgres import CopyToTable, PostgresQuery
 from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
+from jitenshea.controller import insert_rows
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 from jitenshea.stats import compute_clusters
 
@@ -356,7 +357,7 @@ class AggregateVCUBTransactionIntoDB(CopyToTable):
         return AggregateTransaction(self.date)
 
 class CreateClusteredStationTable(PostgresQuery):
-    """
+    """Create the `clustered_stations` table in `bordeaux` scheme
     """
     host = 'localhost'
     database = config['database']['dbname']
@@ -386,7 +387,7 @@ class CreateClusteredStationTable(PostgresQuery):
         connection.close()
 
 class CreateCentroidTable(PostgresQuery):
-    """
+    """Create the `centroids` table in `bordeaux` scheme
     """
     host = 'localhost'
     database = config['database']['dbname']
@@ -454,17 +455,10 @@ class BordeauxClustering(PostgresQuery):
                                               "stop": self.end_date})
         df.columns = ["station_id", "ts", "nb_bikes"]
         clusters = compute_clusters(df)
-        insert_query = "INSERT INTO {} VALUES ({});"
-        for _, row in clusters["labels"].iterrows():
-            table = ".".join([config["bordeaux"]["schema"],
-                              config["bordeaux"]["clustering"]])
-            values = ", ".join(str(rv) for rv in row.values)
-            cursor.execute(insert_query.format(table, values))
-        for _, row in clusters["centroids"].iterrows():
-            table = ".".join([config["bordeaux"]["schema"],
-                              config["bordeaux"]["centroids"]])
-            values = ", ".join(str(rv) for rv in row.values)
-            cursor.execute(insert_query.format(table, values))
+        insert_rows(clusters["labels"], cursor,
+                    config["bordeaux"]["schema"], config["bordeaux"]["clustering"])
+        insert_rows(clusters["centroids"], cursor,
+                    config["bordeaux"]["schema"], config["bordeaux"]["centroids"])
         # Update marker table
         self.output().touch(connection)
         # commit and close connection

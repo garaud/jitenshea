@@ -26,6 +26,7 @@ from luigi.format import UTF8, MixedUnicodeBytes
 import pandas as pd
 
 from jitenshea import config
+from jitenshea.controller import insert_rows
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 from jitenshea.stats import compute_clusters
 
@@ -316,7 +317,7 @@ class AggregateLyonTransactionIntoDB(CopyToTable):
         return AggregateTransaction(self.date)
 
 class CreateClusteredStationTable(PostgresQuery):
-    """
+    """Create the `clustered_stations` table in `lyon` scheme
     """
     host = 'localhost'
     database = config['database']['dbname']
@@ -346,7 +347,7 @@ class CreateClusteredStationTable(PostgresQuery):
         connection.close()
 
 class CreateCentroidTable(PostgresQuery):
-    """
+    """Create the `centroids` table in `lyon` scheme
     """
     host = 'localhost'
     database = config['database']['dbname']
@@ -414,17 +415,10 @@ class LyonClustering(PostgresQuery):
                                               "stop": self.end_date})
         df.columns = ["station_id", "ts", "nb_bikes"]
         clusters = compute_clusters(df)
-        insert_query = "INSERT INTO {} VALUES ({});"
-        for _, row in clusters["labels"].iterrows():
-            table = ".".join([config["lyon"]["schema"],
-                              config["lyon"]["clustering"]])
-            values = ", ".join(str(rv) for rv in row.values)
-            cursor.execute(insert_query.format(table, values))
-        for _, row in clusters["centroids"].iterrows():
-            table = ".".join([config["lyon"]["schema"],
-                              config["lyon"]["centroids"]])
-            values = ", ".join(str(rv) for rv in row.values)
-            cursor.execute(insert_query.format(table, values))
+        insert_rows(clusters["labels"], cursor,
+                    config["lyon"]["schema"], config["lyon"]["clustering"])
+        insert_rows(clusters["centroids"], cursor,
+                    config["lyon"]["schema"], config["lyon"]["centroids"])
         # Update marker table
         self.output().touch(connection)
         # commit and close connection

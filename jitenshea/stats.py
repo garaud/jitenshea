@@ -3,7 +3,6 @@
 """Statistical methods used for analyzing the shared bike data
 """
 
-
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
