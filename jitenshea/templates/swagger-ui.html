@@ -66,6 +66,8 @@
 
 <div id="swagger-ui"></div>
 
+<script src="{{ url_for('static', filename='settings.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='app.js') }}" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='bower/swagger-ui/dist/swagger-ui-bundle.js') }}" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='bower/swagger-ui/dist/swagger-ui-standalone-preset.js') }}" type="text/javascript"></script>
 
@@ -74,7 +76,7 @@ window.onload = function() {
 
   // Build a system
   const ui = SwaggerUIBundle({
-    url: "/api/swagger.json",
+    url: PREFIX + "/api/swagger.json",
     validatorUrl: "" || null,
     dom_id: '#swagger-ui',
     deepLinking: true,

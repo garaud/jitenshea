@@ -21,7 +21,7 @@ $(document).ready(function() {
       "targets": 1,
       "data": "name",
       "render": function(data, type, row, meta) {
-        return '<a href="/' + city + "/" + row.id + '">' + data + '</a>';
+        return '<a href="' + PREFIX + '/' + city + "/" + row.id + '">' + data + '</a>';
       }
     } ],
     columns: [
@@ -134,7 +134,7 @@ $(document).ready(function() {
           point: {
             events: {
               click: function(event) {
-                window.location.href = '/' + city + '/' + content.data[this.index].id;
+                window.location.href = PREFIX + '/' + city + '/' + content.data[this.index].id;
               }
             }
           }

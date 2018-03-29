@@ -1,6 +1,7 @@
 // Jitenshea
 
-var API_URL = "/api"
+// PREFIX should be defined in the settings.js file
+var API_URL = PREFIX + '/api';
 
 // Build the URL with a BASE_URL/<city> suffix based from a DOM element with the
 // "city" dataset attribute, i.e. 'data-city'.
