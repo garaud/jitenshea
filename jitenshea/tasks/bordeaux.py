@@ -417,50 +417,110 @@ class CreateCentroidTable(PostgresQuery):
         connection.commit()
         connection.close()
 
-class BordeauxClustering(PostgresQuery):
+class BordeauxComputeClusters(luigi.Task):
     """Compute clusters corresponding to bike availability on a given `city`
     between a `start` and an `end` date
     """
-    start_date = luigi.DateParameter(default=yesterday())
-    end_date = luigi.DateParameter(default=date.today())
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def outputpath(self):
+        fname = "-".join(["bordeaux", "clustering.h5"])
+        return os.path.join(DATADIR, fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def requires(self):
+        return {"timeseries": BicycleStationDatabase(),
+                "stations": CreateClusteredStationTable(schema=config['bordeaux']['schema'],
+                                                        tablename=config['bordeaux']['clustering']),
+                "centroids": CreateCentroidTable(schema=config['bordeaux']['schema'],
+                                                 tablename=config['bordeaux']['centroids'])}
+
+    def run(self):
+        query = ("SELECT gid, ts, available_bike "
+                 "FROM {}.{} "
+                 "WHERE ts >= %(start)s "
+                 "AND ts < %(stop)s;"
+                 "").format(config['bordeaux']['schema'], config['bordeaux']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        df.columns = ["station_id", "ts", "nb_bikes"]
+        clusters = compute_clusters(df)
+        path = self.output().path
+        clusters['labels'].to_hdf(path, '/clusters')
+        clusters['centroids'].to_hdf(path, '/centroids')
+
+class BordeauxStoreClustersToDatabase(CopyToTable):
+    """
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
     host = 'localhost'
     database = config['database']['dbname']
     user = config['database']['user']
     password = None
-    schema = config['bordeaux']['schema']
-    tablename = config['bordeaux']['table']
-    query = ("SELECT gid, ts, available_bike "
-             "FROM {}.{} "
-             "WHERE ts >= %(start)s "
-             "AND ts < %(stop)s;"
-             "")
+    table = '{schema}.{tablename}'.format(schema=config['bordeaux']['schema'],
+                                          tablename=config['bordeaux']['clustering'])
+    columns = [('station_id', 'INT'),
+               ('cluster_id', 'INT')]
 
-    @property
-    def table(self):
-        return ".".join([self.schema, self.tablename])
+    def rows(self):
+        """overload the rows method to skip the first line (header)
+        """
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'clusters')
+        for _, row in clusters.iterrows():
+            yield row.values
 
     def requires(self):
-        return {"timeseries": BicycleStationDatabase(),
-                "stations": CreateClusteredStationTable(schema=self.schema,
-                                                        tablename=config['bordeaux']['clustering']),
-                "centroids": CreateCentroidTable(schema=self.schema,
-                                                 tablename=config['bordeaux']['centroids'])}
+        return BordeauxComputeClusters(self.start, self.stop)
 
-    def run(self):
-        connection = self.output().connect()
-        cursor = connection.cursor()
-        sql_query = self.query.format(self.schema, self.tablename)
-        df = pd.io.sql.read_sql_query(sql_query, connection,
-                                      params={"start": self.start_date,
-                                              "stop": self.end_date})
-        df.columns = ["station_id", "ts", "nb_bikes"]
-        clusters = compute_clusters(df)
-        insert_rows(clusters["labels"], cursor,
-                    config["bordeaux"]["schema"], config["bordeaux"]["clustering"])
-        insert_rows(clusters["centroids"], cursor,
-                    config["bordeaux"]["schema"], config["bordeaux"]["centroids"])
-        # Update marker table
-        self.output().touch(connection)
-        # commit and close connection
-        connection.commit()
-        connection.close()
+class BordeauxStoreCentroidsToDatabase(CopyToTable):
+    """
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    table = '{schema}.{tablename}'.format(schema=config['bordeaux']['schema'],
+                                          tablename=config['bordeaux']['centroids'])
+    first_column = [('cluster_id', 'INT')]
+
+    @property
+    def columns(self):
+        if len(self.first_column) == 1:
+            self.first_column.extend([('h'+str(i), 'DOUBLE PRECISION')
+                                      for i in range(24)])
+        return self.first_column
+
+    def rows(self):
+        """overload the rows method to skip the first line (header)
+        """
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'centroids')
+        print(clusters.head())
+        for _, row in clusters.iterrows():
+            modified_row = list(row.values)
+            modified_row[0] = int(modified_row[0])
+            yield modified_row
+
+    def requires(self):
+        return BordeauxComputeClusters(self.start, self.stop)
+
+class BordeauxClustering(luigi.Task):
+    """
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def requires(self):
+        yield BordeauxStoreClustersToDatabase(self.start, self.stop)
+        yield BordeauxStoreCentroidsToDatabase(self.start, self.stop)
