@@ -417,8 +417,9 @@ class CreateCentroidTable(PostgresQuery):
         connection.close()
 
 class BordeauxComputeClusters(luigi.Task):
-    """Compute clusters corresponding to bike availability on a given `city`
+    """Compute clusters corresponding to bike availability in bordeaux stations
     between a `start` and an `end` date
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -454,7 +455,9 @@ class BordeauxComputeClusters(luigi.Task):
         clusters['centroids'].to_hdf(path, '/centroids')
 
 class BordeauxStoreClustersToDatabase(CopyToTable):
-    """
+    """Read the cluster labels from `DATADIR/bordeaux-clustering.h5` file and store
+    them into `clustered_stations`
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -469,8 +472,6 @@ class BordeauxStoreClustersToDatabase(CopyToTable):
                ('cluster_id', 'INT')]
 
     def rows(self):
-        """overload the rows method to skip the first line (header)
-        """
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'clusters')
         for _, row in clusters.iterrows():
@@ -480,7 +481,9 @@ class BordeauxStoreClustersToDatabase(CopyToTable):
         return BordeauxComputeClusters(self.start, self.stop)
 
 class BordeauxStoreCentroidsToDatabase(CopyToTable):
-    """
+    """Read the cluster centroids from `DATADIR/bordeaux-clustering.h5` file and
+    store them into `centroids`
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -501,8 +504,6 @@ class BordeauxStoreCentroidsToDatabase(CopyToTable):
         return self.first_column
 
     def rows(self):
-        """overload the rows method to skip the first line (header)
-        """
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'centroids')
         print(clusters.head())
@@ -515,7 +516,8 @@ class BordeauxStoreCentroidsToDatabase(CopyToTable):
         return BordeauxComputeClusters(self.start, self.stop)
 
 class BordeauxClustering(luigi.Task):
-    """
+    """Clustering master task
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())

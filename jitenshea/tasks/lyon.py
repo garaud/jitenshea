@@ -378,7 +378,7 @@ class CreateCentroidTable(PostgresQuery):
         connection.close()
 
 class LyonComputeClusters(luigi.Task):
-    """Compute clusters corresponding to bike availability on a given `city`
+    """Compute clusters corresponding to bike availability in lyon stations
     between a `start` and an `end` date
     """
     start = luigi.DateParameter(default=yesterday())
@@ -415,7 +415,9 @@ class LyonComputeClusters(luigi.Task):
         clusters['centroids'].to_hdf(path, '/centroids')
 
 class LyonStoreClustersToDatabase(CopyToTable):
-    """
+    """Read the cluster labels from `DATADIR/lyon-clustering.h5` file and store
+    them into `clustered_stations`
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -430,8 +432,6 @@ class LyonStoreClustersToDatabase(CopyToTable):
                ('cluster_id', 'INT')]
 
     def rows(self):
-        """overload the rows method to skip the first line (header)
-        """
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'clusters')
         for _, row in clusters.iterrows():
@@ -441,7 +441,9 @@ class LyonStoreClustersToDatabase(CopyToTable):
         return LyonComputeClusters(self.start, self.stop)
 
 class LyonStoreCentroidsToDatabase(CopyToTable):
-    """
+    """Read the cluster centroids from `DATADIR/lyon-clustering.h5` file and store
+    them into `centroids`
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -462,8 +464,6 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
         return self.first_column
 
     def rows(self):
-        """overload the rows method to skip the first line (header)
-        """
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'centroids')
         print(clusters.head())
@@ -476,7 +476,8 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
         return LyonComputeClusters(self.start, self.stop)
 
 class LyonClustering(luigi.Task):
-    """
+    """Clustering master task
+
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
