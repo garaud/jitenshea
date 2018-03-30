@@ -419,23 +419,3 @@ def daily_profile(city, station_ids, day, window):
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
     return {"data": result, "date": day, "window": window}
-
-def insert_rows(df, conn, schema, table):
-    """Insert `df` rows into table `table` of schema ̀schema`
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame that contains data to insert in base
-    conn : psycopg2.extension.cursor
-        Database connection object
-    schema : str
-        Name of the schema
-    table : str
-        Name of the table that will be fulfilled
-    """
-    insert_query = "INSERT INTO {} VALUES ({});"
-    for _, row in df.iterrows():
-        schtable = ".".join([schema, table])
-        values = ", ".join(str(rv) for rv in row.values)
-        conn.execute(insert_query.format(schtable, values))

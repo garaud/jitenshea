@@ -27,7 +27,6 @@ from luigi.format import UTF8, MixedUnicodeBytes
 import pandas as pd
 
 from jitenshea import config
-from jitenshea.controller import insert_rows
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 from jitenshea.stats import compute_clusters
 
