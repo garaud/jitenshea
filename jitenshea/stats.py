@@ -25,14 +25,14 @@ def compute_clusters(df):
     for cluster centroids
     
     """
-    df_norm = preprocess_data(df)
+    df_norm = preprocess_data_for_clustering(df)
     model = KMeans(n_clusters=4, random_state=0)
     kmeans = model.fit(df_norm.T)
     df_labels = pd.DataFrame({"id_station": df_norm.columns, "labels": kmeans.labels_})
     df_centroids = pd.DataFrame(kmeans.cluster_centers_).reset_index()
     return {"labels": df_labels, "centroids": df_centroids}
 
-def preprocess_data(df):
+def preprocess_data_for_clustering(df):
     """Prepare data in order to apply a clustering algorithm
 
     Parameters
