@@ -460,7 +460,6 @@ class BordeauxStoreCentroidsToDatabase(CopyToTable):
     def rows(self):
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'centroids')
-        print(clusters.head())
         for _, row in clusters.iterrows():
             modified_row = list(row.values)
             modified_row[0] = int(modified_row[0])
