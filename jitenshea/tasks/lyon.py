@@ -431,13 +431,18 @@ class LyonStoreClustersToDatabase(CopyToTable):
     table = '{schema}.{tablename}'.format(schema=config['lyon']['schema'],
                                           tablename=config['lyon']['clustering'])
     columns = [('station_id', 'INT'),
+               ('start', 'DATE'),
+               ('stop', 'DATE'),
                ('cluster_id', 'INT')]
 
     def rows(self):
         inputpath = self.input().path
         clusters = pd.read_hdf(inputpath, 'clusters')
         for _, row in clusters.iterrows():
-            yield row.values
+            modified_row = list(row.values)
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
+            yield modified_row
 
     def requires(self):
         return LyonComputeClusters(self.start, self.stop)
@@ -456,14 +461,16 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
     password = None
     table = '{schema}.{tablename}'.format(schema=config['lyon']['schema'],
                                           tablename=config['lyon']['centroids'])
-    first_column = [('cluster_id', 'INT')]
+    first_columns = [('cluster_id', 'INT'),
+                     ('start', 'DATE'),
+                     ('stop', 'DATE')]
 
     @property
     def columns(self):
-        if len(self.first_column) == 1:
-            self.first_column.extend([('h'+str(i), 'DOUBLE PRECISION')
+        if len(self.first_columns) == 3:
+            self.first_columns.extend([('h'+str(i), 'DOUBLE PRECISION')
                                       for i in range(24)])
-        return self.first_column
+        return self.first_columns
 
     def rows(self):
         inputpath = self.input().path
@@ -472,6 +479,8 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
         for _, row in clusters.iterrows():
             modified_row = list(row.values)
             modified_row[0] = int(modified_row[0])
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
             yield modified_row
 
     def requires(self):
