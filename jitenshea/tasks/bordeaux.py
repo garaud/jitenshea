@@ -425,7 +425,9 @@ class BordeauxComputeClusters(luigi.Task):
     stop = luigi.DateParameter(default=date.today())
 
     def outputpath(self):
-        fname = "-".join(["bordeaux", "clustering.h5"])
+        start_date = self.start.strftime("%Y%m%d")
+        stop_date = self.stop.strftime("%Y%m%d")
+        fname = "bordeaux-{}-{}-clustering.h5".format(start_date, stop_date)
         return os.path.join(DATADIR, fname)
 
     def output(self):
