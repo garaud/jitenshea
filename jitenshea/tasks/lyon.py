@@ -316,67 +316,6 @@ class AggregateLyonTransactionIntoDB(CopyToTable):
     def requires(self):
         return AggregateTransaction(self.date)
 
-class CreateClusteredStationTable(PostgresQuery):
-    """Create the `clustered_stations` table in `lyon` scheme
-    """
-    host = 'localhost'
-    database = config['database']['dbname']
-    user = config['database']['user']
-    password = None
-    schema = luigi.Parameter()
-    tablename = luigi.Parameter()
-    query = ("DROP TABLE IF EXISTS {schema}.{table};"
-             "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
-             "station_id int PRIMARY KEY,"
-             "cluster_id INT"
-             ");")
-
-    @property
-    def table(self):
-        return ".".join([self.schema, self.tablename])
-
-    def run(self):
-        connection = self.output().connect()
-        cursor = connection.cursor()
-        sql = self.query.format(schema=self.schema, table=self.tablename)
-        cursor.execute(sql)
-        # Update marker table
-        self.output().touch(connection)
-        # commit and close connection
-        connection.commit()
-        connection.close()
-
-class CreateCentroidTable(PostgresQuery):
-    """Create the `centroids` table in `lyon` scheme
-    """
-    host = 'localhost'
-    database = config['database']['dbname']
-    user = config['database']['user']
-    password = None
-    schema = luigi.Parameter()
-    tablename = luigi.Parameter()
-    query = ("DROP TABLE IF EXISTS {schema}.{table};"
-             "CREATE TABLE IF NOT EXISTS {schema}.{table} ("
-             "cluster_id int PRIMARY KEY,"
-             "h0 float" +
-             "".join([", h"+str(i)+" float " for i in range(1, 24)]) +
-             ");")
-
-    @property
-    def table(self):
-        return ".".join([self.schema, self.tablename])
-
-    def run(self):
-        connection = self.output().connect()
-        cursor = connection.cursor()
-        sql = self.query.format(schema=self.schema, table=self.tablename)
-        cursor.execute(sql)
-        # Update marker table
-        self.output().touch(connection)
-        # commit and close connection
-        connection.commit()
-        connection.close()
-
 class LyonComputeClusters(luigi.Task):
     """Compute clusters corresponding to bike availability in lyon stations
     between a `start` and an `end` date
@@ -392,13 +331,6 @@ class LyonComputeClusters(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
-
-    def requires(self):
-        return {"timeseries": VelovStationDatabase(),
-                "stations": CreateClusteredStationTable(schema=config['lyon']['schema'],
-                                                        tablename=config['lyon']['clustering']),
-                "centroids": CreateCentroidTable(schema=config['lyon']['schema'],
-                                                 tablename=config['lyon']['centroids'])}
 
     def run(self):
         query = ("SELECT number, last_update, available_bikes "
@@ -447,6 +379,21 @@ class LyonStoreClustersToDatabase(CopyToTable):
     def requires(self):
         return LyonComputeClusters(self.start, self.stop)
 
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (station_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
+
 class LyonStoreCentroidsToDatabase(CopyToTable):
     """Read the cluster centroids from `DATADIR/lyon-clustering.h5` file and store
     them into `centroids`
@@ -485,6 +432,21 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
 
     def requires(self):
         return LyonComputeClusters(self.start, self.stop)
+
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (cluster_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
 
 class LyonClustering(luigi.Task):
     """Clustering master task
