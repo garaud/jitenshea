@@ -10,10 +10,14 @@ password
 schema = lyon
 table = timeserie
 daily_transaction = daily_transaction
+clustering = clustered_stations
+centroids = centroids
 
 [bordeaux]
 schema = bordeaux
 table = timeserie
 daily_transaction = daily_transaction
+clustering = clustered_stations
+centroids = centroids
 # API Key
 key = QHUHHRI7HD

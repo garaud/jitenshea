@@ -13,6 +13,9 @@ import zipfile
 from datetime import datetime as dt
 from datetime import date, timedelta
 
+import numpy as np
+from sklearn.cluster import KMeans
+
 import sh
 
 import requests
@@ -25,7 +28,7 @@ import pandas as pd
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-
+from jitenshea.stats import compute_clusters
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 WFS_RDATA_URL = "https://download.data.grandlyon.com/wfs/rdata"
@@ -123,9 +126,6 @@ class CreateSchema(PostgresQuery):
         connection = self.output().connect()
         cursor = connection.cursor()
         sql = self.query.format(schema=self.schema)
-        # print(sql)
-        # print(extract_tablename(self.table))
-        # logger.info('Executing query from task: {name}'.format(name=self.__class__))
         cursor.execute(sql)
         # Update marker table
         self.output().touch(connection)
@@ -315,3 +315,145 @@ class AggregateLyonTransactionIntoDB(CopyToTable):
 
     def requires(self):
         return AggregateTransaction(self.date)
+
+class LyonComputeClusters(luigi.Task):
+    """Compute clusters corresponding to bike availability in lyon stations
+    between a `start` and an `end` date
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def outputpath(self):
+        start_date = self.start.strftime("%Y%m%d")
+        stop_date = self.stop.strftime("%Y%m%d")
+        fname = "lyon-{}-{}-clustering.h5".format(start_date, stop_date)
+        return os.path.join(DATADIR, fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def run(self):
+        query = ("SELECT number, last_update, available_bikes "
+                 "FROM {}.{} "
+                 "WHERE last_update >= %(start)s "
+                 "AND last_update < %(stop)s;"
+                 "").format(config['lyon']['schema'], config['lyon']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        df.columns = ["station_id", "ts", "nb_bikes"]
+        clusters = compute_clusters(df)
+        path = self.output().path
+        clusters['labels'].to_hdf(path, '/clusters')
+        clusters['centroids'].to_hdf(path, '/centroids')
+
+class LyonStoreClustersToDatabase(CopyToTable):
+    """Read the cluster labels from `DATADIR/lyon-clustering.h5` file and store
+    them into `clustered_stations`
+
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    table = '{schema}.{tablename}'.format(schema=config['lyon']['schema'],
+                                          tablename=config['lyon']['clustering'])
+    columns = [('station_id', 'INT'),
+               ('start', 'DATE'),
+               ('stop', 'DATE'),
+               ('cluster_id', 'INT')]
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'clusters')
+        for _, row in clusters.iterrows():
+            modified_row = list(row.values)
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
+            yield modified_row
+
+    def requires(self):
+        return LyonComputeClusters(self.start, self.stop)
+
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (station_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
+
+class LyonStoreCentroidsToDatabase(CopyToTable):
+    """Read the cluster centroids from `DATADIR/lyon-clustering.h5` file and store
+    them into `centroids`
+
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    host = 'localhost'
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    table = '{schema}.{tablename}'.format(schema=config['lyon']['schema'],
+                                          tablename=config['lyon']['centroids'])
+    first_columns = [('cluster_id', 'INT'),
+                     ('start', 'DATE'),
+                     ('stop', 'DATE')]
+
+    @property
+    def columns(self):
+        if len(self.first_columns) == 3:
+            self.first_columns.extend([('h'+str(i), 'DOUBLE PRECISION')
+                                      for i in range(24)])
+        return self.first_columns
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'centroids')
+        for _, row in clusters.iterrows():
+            modified_row = list(row.values)
+            modified_row[0] = int(modified_row[0])
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
+            yield modified_row
+
+    def requires(self):
+        return LyonComputeClusters(self.start, self.stop)
+
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (cluster_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
+
+class LyonClustering(luigi.Task):
+    """Clustering master task
+
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def requires(self):
+        yield LyonStoreClustersToDatabase(self.start, self.stop)
+        yield LyonStoreCentroidsToDatabase(self.start, self.stop)
