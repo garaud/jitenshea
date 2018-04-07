@@ -2,6 +2,18 @@
 
 {% block content %}
 
+<h3>{{city|capitalize}} Station #{{station_id}}</h3>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item" aria-current="page"><a href="{{url_for('index')}}">Home</a></li>
+    <li class="breadcrumb-item" aria-current="page">
+      <a href="{{url_for('city_view', city=city)}}">{{city|capitalize}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Station {{station_id}}</li>
+  </ol>
+</nav>
+
+
 <div class="container" id="stationSummary" data-city="{{city}}"
      data-station-id="{{station_id}}">
   <div class="container">
