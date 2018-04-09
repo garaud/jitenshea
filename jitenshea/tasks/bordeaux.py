@@ -36,7 +36,7 @@ from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-from jitenshea.stats import compute_clusters
+from jitenshea.stats import compute_clusters, train_prediction_model
 
 # To get shapefile (in a zip).
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
@@ -495,3 +495,63 @@ class BordeauxClustering(luigi.Task):
     def requires(self):
         yield BordeauxStoreClustersToDatabase(self.start, self.stop)
         yield BordeauxStoreCentroidsToDatabase(self.start, self.stop)
+
+class BordeauxTrainXGBoost(luigi.Task):
+    """Train a XGBoost model between `start` and `stop` dates to predict bike
+    availability at each station
+
+    Attributes
+    ----------
+    start : luigi.DateParameter
+        Training start date
+    stop : luigi.DataParameter
+        Training stop date upper bound (actually the end date is computed with
+    `validation`)
+    validation : luigi.DateMinuteParameter
+        Date that bounds the training set and the validation set during the
+    XGBoost model training
+    frequency : DateOffset, timedelta or str
+        Indicates the prediction frequency
+    
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+    validation = luigi.DateMinuteParameter(default=date.today()-timedelta(hours=1))
+    frequency = luigi.Parameter(default="30T")
+
+    def outputpath(self):
+        start_date = self.start.strftime("%Y%m%d")
+        stop_date = self.stop.strftime("%Y%m%d")
+        validation_date = self.validation.strftime("%Y%m%dT%H%M")
+        fname = "bordeaux-{}-{}-{}-{}.xgboost.model".format(start_date,
+                                                        stop_date,
+                                                        validation_date,
+                                                        self.frequency)
+        return os.path.join(DATADIR, fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def run(self):
+        query = ("SELECT DISTINCT gid AS station_id, ts, "
+                 "available_bike AS nb_bikes, "
+                 "available_stand AS nb_stands, "
+                 "available_bike::float / (available_bike::float "
+                 "+ available_stand::float) AS probability "
+                 "FROM {}.{} "
+                 "WHERE ts >= %(start)s "
+                 "AND ts < %(stop)s "
+                 "AND (available_bike > 0 OR available_stand > 0) "
+                 "AND state = 'CONNECTEE'"
+                 "ORDER BY station_id, ts"
+                 ";").format(config['bordeaux']['schema'],
+                             config['bordeaux']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        prediction_model = train_prediction_model(df,
+                                                  self.validation,
+                                                  self.frequency)
+        path = self.output().path
+        prediction_model.save_model(path)
