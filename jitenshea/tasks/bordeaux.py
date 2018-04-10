@@ -533,7 +533,7 @@ class BordeauxTrainXGBoost(luigi.Task):
         return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
 
     def run(self):
-        query = ("SELECT DISTINCT gid AS station_id, ts, "
+        query = ("SELECT DISTINCT ident AS station_id, ts, "
                  "available_bike AS nb_bikes, "
                  "available_stand AS nb_stands, "
                  "available_bike::float / (available_bike::float "
