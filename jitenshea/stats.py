@@ -28,7 +28,7 @@ def preprocess_data_for_clustering(df):
     -------
     pandas.DataFrame
         Simpified version of `df`, ready to be used for clustering
-    
+
     """
     # Filter unactive stations
     max_bikes = df.groupby("station_id")["nb_bikes"].max()
@@ -222,9 +222,6 @@ def fit(train_X, train_Y, test_X, test_Y):
     param['max_depth'] = 6
     param['silent'] = 1
     param['nthread'] = 4
-    # used num_class only for classification (e.g. a level of availability)
-    # param = {'objective': 'multi:softmax'}
-    # param['num_class'] = train_Y.nunique()
     training_progress = dict()
     xg_train = xgb.DMatrix(train_X, label=train_Y)
     xg_test = xgb.DMatrix(test_X, label=test_Y)
@@ -241,7 +238,7 @@ def train_prediction_model(df, validation_date, frequency):
     """Train a XGBoost model on `df` data with a train/validation split given
     by `predict_date` starting from temporal information (time of the day, day
     of the week) and previous bike availability
-    
+
     Parameters
     ----------
     df : pandas.DataFrame

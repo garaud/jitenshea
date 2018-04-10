@@ -447,6 +447,7 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
                      "").format(table=self.table, coldefs=coldefs)
             connection.cursor().execute(query)
 
+
 class LyonClustering(luigi.Task):
     """Clustering master task
 
@@ -457,6 +458,7 @@ class LyonClustering(luigi.Task):
     def requires(self):
         yield LyonStoreClustersToDatabase(self.start, self.stop)
         yield LyonStoreCentroidsToDatabase(self.start, self.stop)
+
 
 class LyonTrainXGBoost(luigi.Task):
     """Train a XGBoost model between `start` and `stop` dates to predict bike
@@ -474,7 +476,6 @@ class LyonTrainXGBoost(luigi.Task):
     XGBoost model training
     frequency : DateOffset, timedelta or str
         Indicates the prediction frequency
-    
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
