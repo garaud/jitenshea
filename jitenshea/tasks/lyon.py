@@ -28,7 +28,7 @@ import pandas as pd
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-from jitenshea.stats import compute_clusters
+from jitenshea.stats import compute_clusters, train_prediction_model
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 WFS_RDATA_URL = "https://download.data.grandlyon.com/wfs/rdata"
@@ -447,6 +447,7 @@ class LyonStoreCentroidsToDatabase(CopyToTable):
                      "").format(table=self.table, coldefs=coldefs)
             connection.cursor().execute(query)
 
+
 class LyonClustering(luigi.Task):
     """Clustering master task
 
@@ -457,3 +458,59 @@ class LyonClustering(luigi.Task):
     def requires(self):
         yield LyonStoreClustersToDatabase(self.start, self.stop)
         yield LyonStoreCentroidsToDatabase(self.start, self.stop)
+
+
+class LyonTrainXGBoost(luigi.Task):
+    """Train a XGBoost model between `start` and `stop` dates to predict bike
+    availability at each station
+
+    Attributes
+    ----------
+    start : luigi.DateParameter
+        Training start date
+    stop : luigi.DataParameter
+        Training stop date upper bound (actually the end date is computed with
+    `validation`)
+    validation : luigi.DateMinuteParameter
+        Date that bounds the training set and the validation set during the
+    XGBoost model training
+    frequency : DateOffset, timedelta or str
+        Indicates the prediction frequency
+    """
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+    validation = luigi.DateMinuteParameter(default=date.today()-timedelta(hours=1))
+    frequency = luigi.Parameter(default="30T")
+
+    def outputpath(self):
+        fname = "{}-to-{}-at-{}-freq-{}.model".format(self.start, self.stop,
+                                           self.validation.isoformat(),
+                                           self.frequency)
+        return os.path.join(DATADIR, 'xgboost-model', fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def run(self):
+        query = ("SELECT DISTINCT number AS station_id, last_update AS ts, "
+                 "available_bikes AS nb_bikes, "
+                 "available_bike_stands AS nb_stands, "
+                 "available_bikes::float / (available_bikes::float "
+                 "+ available_bike_stands::float) AS probability "
+                 "FROM {}.{} "
+                 "WHERE last_update >= %(start)s "
+                 "AND last_update < %(stop)s "
+                 "AND (available_bikes > 0 OR available_bike_stands > 0) "
+                 "AND status = 'OPEN'"
+                 "ORDER BY station_id, ts"
+                 ";").format(config['lyon']['schema'], config['lyon']['table'])
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        if df.empty:
+            raise Exception("There is not any data to process in the DataFrame. "
+                            + "Please check the dates.")
+        prediction_model = train_prediction_model(df, self.validation, self.frequency)
+        self.output().makedirs()
+        prediction_model.save_model(self.output().path)
