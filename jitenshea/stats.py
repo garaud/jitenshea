@@ -99,7 +99,7 @@ def complete_data(df):
 
     - day of the week
     - hour of the day
-    - minute (10 by 10)
+    - minute
 
     Parameters
     ----------
@@ -113,23 +113,10 @@ def complete_data(df):
 
     """
     logger.info("Complete some data")
-    def group_minute(value):
-        if value <= 10:
-            return 0
-        if value <= 20:
-            return 10
-        if value <= 30:
-            return 20
-        if value <= 40:
-            return 30
-        if value <= 50:
-            return 40
-        return 50
     df = df.copy()
     df['day'] = df['ts'].apply(lambda x: x.weekday())
     df['hour'] = df['ts'].apply(lambda x: x.hour)
-    minute = df['ts'].apply(lambda x: x.minute)
-    df['minute'] = minute.apply(group_minute)
+    df['minute'] = df['ts'].apply(lambda x: x.minute)
     return df
 
 def add_future(df, frequency):
