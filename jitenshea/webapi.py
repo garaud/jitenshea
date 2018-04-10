@@ -90,8 +90,7 @@ def check_city(city):
         api.abort(404, "City {} not found".format(city))
 
 
-api = Api(app,
-          title='Jitenshea: Bicycle-sharing data analysis',
+api = Api(title='Jitenshea: Bicycle-sharing data analysis',
           prefix='/api',
           doc=False,
           version='0.1',
