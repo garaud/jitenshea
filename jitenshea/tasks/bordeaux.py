@@ -520,14 +520,10 @@ class BordeauxTrainXGBoost(luigi.Task):
     frequency = luigi.Parameter(default="30T")
 
     def outputpath(self):
-        start_date = self.start.strftime("%Y%m%d")
-        stop_date = self.stop.strftime("%Y%m%d")
-        validation_date = self.validation.strftime("%Y%m%dT%H%M")
-        fname = "bordeaux-{}-{}-{}-{}.xgboost.model".format(start_date,
-                                                        stop_date,
-                                                        validation_date,
-                                                        self.frequency)
-        return os.path.join(DATADIR, fname)
+        fname = "{}-to-{}-at-{}-freq-{}.model".format(self.start, self.stop,
+                                           self.validation.isoformat(),
+                                           self.frequency)
+        return os.path.join(DATADIR, 'xgboost-model', fname)
 
     def output(self):
         return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
