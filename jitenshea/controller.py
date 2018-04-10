@@ -34,7 +34,7 @@ def processing_daily_data(rset, window):
     Return a list of dicts
     """
     if not rset:
-        return []
+        return {"data": []}
     data = [dict(zip(x.keys(), x)) for x in rset]
     if window == 0:
         return data
