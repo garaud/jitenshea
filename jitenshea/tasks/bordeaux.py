@@ -496,6 +496,7 @@ class BordeauxClustering(luigi.Task):
         yield BordeauxStoreClustersToDatabase(self.start, self.stop)
         yield BordeauxStoreCentroidsToDatabase(self.start, self.stop)
 
+
 class BordeauxTrainXGBoost(luigi.Task):
     """Train a XGBoost model between `start` and `stop` dates to predict bike
     availability at each station
@@ -512,7 +513,6 @@ class BordeauxTrainXGBoost(luigi.Task):
     XGBoost model training
     frequency : DateOffset, timedelta or str
         Indicates the prediction frequency
-    
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
@@ -546,8 +546,9 @@ class BordeauxTrainXGBoost(luigi.Task):
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
                                               "stop": self.stop})
-        prediction_model = train_prediction_model(df,
-                                                  self.validation,
-                                                  self.frequency)
-        path = self.output().path
-        prediction_model.save_model(path)
+        if df.empty:
+            raise Exception("There is not any data to process in the DataFrame. "
+                            + "Please check the dates.")
+        prediction_model = train_prediction_model(df, self.validation, self.frequency)
+        self.output().makedirs()
+        prediction_model.save_model(self.output().path)
