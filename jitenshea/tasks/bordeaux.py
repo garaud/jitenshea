@@ -516,7 +516,7 @@ class BordeauxTrainXGBoost(luigi.Task):
     """
     start = luigi.DateParameter(default=yesterday())
     stop = luigi.DateParameter(default=date.today())
-    validation = luigi.DateMinuteParameter(default=date.today()-timedelta(hours=1))
+    validation = luigi.DateMinuteParameter(default=dt.now() - timedelta(hours=1))
     frequency = luigi.Parameter(default="30T")
 
     def outputpath(self):
