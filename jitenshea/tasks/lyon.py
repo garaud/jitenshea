@@ -324,10 +324,8 @@ class LyonComputeClusters(luigi.Task):
     stop = luigi.DateParameter(default=date.today())
 
     def outputpath(self):
-        start_date = self.start.strftime("%Y%m%d")
-        stop_date = self.stop.strftime("%Y%m%d")
-        fname = "lyon-{}-{}-clustering.h5".format(start_date, stop_date)
-        return os.path.join(DATADIR, fname)
+        fname = "kmeans-{}-to-{}.h5".format(self.start, self.stop)
+        return os.path.join(DATADIR, 'clustering', fname)
 
     def output(self):
         return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
@@ -344,6 +342,7 @@ class LyonComputeClusters(luigi.Task):
                                               "stop": self.stop})
         df.columns = ["station_id", "ts", "nb_bikes"]
         clusters = compute_clusters(df)
+        self.output().makedirs()
         path = self.output().path
         clusters['labels'].to_hdf(path, '/clusters')
         clusters['centroids'].to_hdf(path, '/centroids')
