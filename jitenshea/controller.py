@@ -459,18 +459,27 @@ def station_cluster_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
+    table, idname = station_city_table(city)
     return ("WITH ranked_clusters AS ("
-            "SELECT station_id AS id, "
-            "cluster_id, "
-            "start AS start_date, "
-            "stop AS end_date, "
+            "SELECT cs.station_id AS id, "
+            "cs.cluster_id, "
+            "cs.start AS start, "
+            "cs.stop AS stop, "
+            "citystation.nom AS nom, "
+            "citystation.geom AS geom, "
             "rank() OVER (ORDER BY stop DESC) AS rank "
-            "FROM {schema}.clustered_stations "
-            "WHERE station_id IN %(id_list)s) "
-            "SELECT id, cluster_id, start_date, end_date "
+            "FROM {schema}.clustered_stations AS cs "
+            "JOIN {schema}.{table} AS citystation "
+            "ON citystation.{idcol} = cs.station_id::varchar "
+            "WHERE cs.station_id IN %(id_list)s) "
+            "SELECT id, cluster_id, start, stop, nom, "
+            "st_x(st_transform(geom, 4326)) as x, "
+            "st_y(st_transform(geom, 4326)) as y "
             "FROM ranked_clusters "
             "WHERE rank=1"
-            ";").format(schema=config[city]['schema'])
+            ";").format(schema=config[city]['schema'],
+                        table=table,
+                        idcol=idname)
 
 
 def station_clusters(city, station_ids=None):
