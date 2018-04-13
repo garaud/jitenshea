@@ -441,7 +441,7 @@ def get_station_ids(city):
     rset = eng.execute(query).fetchall()
     if not rset:
         return []
-    return [int(row[0]) for row in rset]
+    return [row[0] for row in rset]
 
 
 def station_cluster_query(city):
@@ -459,18 +459,21 @@ def station_cluster_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
-    return ("SELECT station_id AS id, "
+    return ("WITH ranked_clusters AS ("
+            "SELECT station_id AS id, "
+            "cluster_id, "
             "start AS start_date, "
             "stop AS end_date, "
-            "cluster_id "
+            "rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.clustered_stations "
-            "WHERE station_id IN %(id_list)s "
-            "AND start = %(start)s "
-            "AND stop = %(stop)s"
+            "WHERE station_id IN %(id_list)s) "
+            "SELECT id, cluster_id, start_date, end_date "
+            "FROM ranked_clusters "
+            "WHERE rank=1"
             ";").format(schema=config[city]['schema'])
 
 
-def station_clusters(city, day, window, station_ids=None):
+def station_clusters(city, station_ids=None):
     """Return the cluster IDs of shared-bike stations in `city`, when running a
     K-means algorithm between `day` and `day+window`
 
@@ -478,10 +481,6 @@ def station_clusters(city, day, window, station_ids=None):
     ----------
     city : str
         City of interest, either `bordeaux` or `lyon`
-    day : date
-        Clustering algorithm beginning date
-    window : integer
-        Number of days used in the clustering algorithm
     station_ids : list of integer
         Shared-bike station IDs ; if None, all the city stations are considered
 
@@ -491,17 +490,12 @@ def station_clusters(city, day, window, station_ids=None):
         Cluster profiles for each cluster, at each hour of the day
 
     """
-    if isinstance(day, str):
-        day = datetime.strptime(day, '%Y-%m-%d')
     if station_ids is None:
         station_ids = get_station_ids(city)
-    window = time_window(day, window, False)
     query = station_cluster_query(city)
     eng = db()
     rset = eng.execute(query,
-                       id_list=tuple(str(x) for x in station_ids),
-                       start=window.start,
-                       stop=window.stop)
+                       id_list=tuple(str(x) for x in station_ids))
     if not rset:
         logger.warning("rset is empty")
         return {"data": []}
@@ -524,14 +518,19 @@ def cluster_profile_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
-    return ("SELECT * "
-            "FROM {schema}.centroids "
-            "WHERE start = %(start)s "
-            "AND stop = %(stop)s"
+    return ("WITH ranked_centroids AS ("
+            "SELECT *, rank() OVER (ORDER BY stop DESC) AS rank "
+            "FROM {schema}.centroids) "
+            "SELECT cluster_id, "
+            "h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, "
+            "h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, "
+            "start, stop "
+            "FROM ranked_centroids "
+            "WHERE rank=1"
             ";").format(schema=config[city]['schema'])
 
 
-def cluster_profiles(city, day, window):
+def cluster_profiles(city):
     """Return the cluster profiles in `city`, when running a K-means algorithm
     between `day` and `day+window`
 
@@ -539,24 +538,15 @@ def cluster_profiles(city, day, window):
     ----------
     city : str
         City of interest, either `bordeaux` or `lyon`
-    day : date
-        Clustering algorithm beginning date
-    window : integer
-        Number of days used in the clustering algorithm
 
     Returns
     -------
     dict
         Cluster profiles for each cluster, at each hour of the day
     """
-    if isinstance(day, str):
-        day = datetime.strptime(day, '%Y-%m-%d')
-    window = time_window(day, window, False)
     query = cluster_profile_query(city)
     eng = db()
-    rset = eng.execute(query,
-                       start=window.start,
-                       stop=window.stop)
+    rset = eng.execute(query)
     if not rset:
         logger.warning("rset is empty")
         return {"data": []}
