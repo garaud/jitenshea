@@ -8,7 +8,7 @@ import daiquiri
 import logging
 
 from itertools import groupby
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import namedtuple
 
 import pandas as pd
@@ -110,6 +110,38 @@ def station_geojson(stations):
                  "nb_bikes": data['nb_bikes']
              }})
     return {"type": "FeatureCollection", "features": result}
+
+
+def clustered_station_geojson(stations):
+    """Process station data into GeoJSON
+
+    Parameters
+    ----------
+    stations : list of dicts
+        Clustered stations
+
+    Returns
+    -------
+    dict
+        Clustered stations formatted as a GeoJSon object
+    """
+    result = []
+    for data in stations:
+        result.append(
+            {"type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [data['x'], data['y']]
+             },
+             "properties": {
+                 "id": data['id'],
+                 "cluster_id": data['cluster_id'],
+                 "name": data['nom'],
+                 "start": data['start'],
+                 "stop": data['stop']
+             }})
+    return {"type": "FeatureCollection", "features": result}
+
 
 def cities():
     "List of cities"
@@ -419,3 +451,157 @@ def daily_profile(city, station_ids, day, window):
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
     return {"data": result, "date": day, "window": window}
+
+
+def get_station_ids(city):
+    """Provides the list of shared-bike station IDs
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+
+    Returns
+    -------
+    list of integers
+        IDs of the shared-bike stations in the `city`
+    """
+    table, idcol = station_city_table(city)
+    query = ("SELECT {id} FROM {schema}.{table}"
+             ";").format(id=idcol, schema=config[city]["schema"], table=table)
+    eng = db()
+    rset = eng.execute(query).fetchall()
+    if not rset:
+        return []
+    return [row[0] for row in rset]
+
+
+def station_cluster_query(city):
+    """SQL query to get cluster IDs for some shared_bike stations within `city`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either ̀bordeaux` or `lyon`
+
+    Returns
+    -------
+    str
+        SQL query that gives the cluster ID for shared-bike stations in `city`
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    table, idname = station_city_table(city)
+    return ("WITH ranked_clusters AS ("
+            "SELECT cs.station_id AS id, "
+            "cs.cluster_id, "
+            "cs.start AS start, "
+            "cs.stop AS stop, "
+            "citystation.nom AS nom, "
+            "citystation.geom AS geom, "
+            "rank() OVER (ORDER BY stop DESC) AS rank "
+            "FROM {schema}.clustered_stations AS cs "
+            "JOIN {schema}.{table} AS citystation "
+            "ON citystation.{idcol} = cs.station_id::varchar "
+            "WHERE cs.station_id IN %(id_list)s) "
+            "SELECT id, cluster_id, start, stop, nom, "
+            "st_x(st_transform(geom, 4326)) as x, "
+            "st_y(st_transform(geom, 4326)) as y "
+            "FROM ranked_clusters "
+            "WHERE rank=1"
+            ";").format(schema=config[city]['schema'],
+                        table=table,
+                        idcol=idname)
+
+
+def station_clusters(city, station_ids=None, geojson=False):
+    """Return the cluster IDs of shared-bike stations in `city`, when running a
+    K-means algorithm between `day` and `day+window`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+    station_ids : list of integer
+        Shared-bike station IDs ; if None, all the city stations are considered
+    geojson : boolean
+        If true, returns the clustered stations under the GeoJSON format
+
+    Returns
+    -------
+    dict
+        Cluster profiles for each cluster, at each hour of the day
+
+    """
+    if station_ids is None:
+        station_ids = get_station_ids(city)
+    query = station_cluster_query(city)
+    eng = db()
+    rset = eng.execute(query,
+                       id_list=tuple(str(x) for x in station_ids))
+    if not rset:
+        logger.warning("rset is empty")
+        return {"data": []}
+    data = {"data": [dict(zip(rset.keys(), row)) for row in rset]}
+    if geojson:
+        return clustered_station_geojson(data["data"])
+    return data
+
+
+def cluster_profile_query(city):
+    """SQL query to get cluster descriptions as 24-houred timeseries within `city`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either ̀bordeaux` or `lyon`
+
+    Returns
+    -------
+    str
+        SQL query that gives the timeseries cluster profile in `city`
+
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    return ("WITH ranked_centroids AS ("
+            "SELECT *, rank() OVER (ORDER BY stop DESC) AS rank "
+            "FROM {schema}.centroids) "
+            "SELECT cluster_id, "
+            "h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, "
+            "h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, "
+            "start, stop "
+            "FROM ranked_centroids "
+            "WHERE rank=1"
+            ";").format(schema=config[city]['schema'])
+
+
+def cluster_profiles(city):
+    """Return the cluster profiles in `city`, when running a K-means algorithm
+    between `day` and `day+window`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+
+    Returns
+    -------
+    dict
+        Cluster profiles for each cluster, at each hour of the day
+    """
+    query = cluster_profile_query(city)
+    eng = db()
+    rset = eng.execute(query)
+    if not rset:
+        logger.warning("rset is empty")
+        return {"data": []}
+    result = []
+    for cluster in (dict(zip(rset.keys(), row)) for row in rset):
+        result.append({"cluster_id": cluster['cluster_id'],
+                       "start": cluster['start'],
+                       'stop': cluster['stop'],
+                       'hour': list(range(24)),
+                       'values': [cluster[h] for h in ["h{}".format(i) for i in range(24)]]}
+        )
+    return {"data": result}
