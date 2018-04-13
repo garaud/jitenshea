@@ -269,3 +269,18 @@ class CityClusterCentroids(Resource):
         if not rset:
             api.abort(404, ("No K-means algorithm trained in this city"))
         return jsonify(rset)
+
+@api.route("/<string:city>/clustering/centroids")
+class CityClusterCentroids(Resource):
+    @api.doc(parser=clustering_parser,
+             description="Centroids of clusters computed with a K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        args = clustering_parser.parse_args()
+        start_date = parse_date(args["start_date"])
+        window = args["window"]
+        rset = controller.cluster_profiles(city, start_date, window)
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained between {} and {}"
+                            "").format(start_date, start_date + window))
+        return jsonify(rset)
