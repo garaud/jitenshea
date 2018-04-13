@@ -559,4 +559,12 @@ def cluster_profiles(city):
     if not rset:
         logger.warning("rset is empty")
         return {"data": []}
-    return {"data": [dict(zip(rset.keys(), row)) for row in rset]}
+    result = []
+    for cluster in (dict(zip(rset.keys(), row)) for row in rset):
+        result.append({"cluster_id": cluster['cluster_id'],
+                       "start": cluster['start'],
+                       'stop': cluster['stop'],
+                       'hour': list(range(24)),
+                       'values': [cluster[h] for h in ["h{}".format(i) for i in range(24)]]}
+        )
+    return {"data": result}
