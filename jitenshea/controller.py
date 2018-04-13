@@ -111,6 +111,38 @@ def station_geojson(stations):
              }})
     return {"type": "FeatureCollection", "features": result}
 
+
+def clustered_station_geojson(stations):
+    """Process station data into GeoJSON
+
+    Parameters
+    ----------
+    stations : list of dicts
+        Clustered stations
+
+    Returns
+    -------
+    dict
+        Clustered stations formatted as a GeoJSon object
+    """
+    result = []
+    for data in stations:
+        result.append(
+            {"type": "Feature",
+             "geometry": {
+                 "type": "Point",
+                 "coordinates": [data['x'], data['y']]
+             },
+             "properties": {
+                 "id": data['id'],
+                 "cluster_id": data['cluster_id'],
+                 "name": data['nom'],
+                 "start": data['start'],
+                 "stop": data['stop']
+             }})
+    return {"type": "FeatureCollection", "features": result}
+
+
 def cities():
     "List of cities"
     # Lyon
@@ -482,7 +514,7 @@ def station_cluster_query(city):
                         idcol=idname)
 
 
-def station_clusters(city, station_ids=None):
+def station_clusters(city, station_ids=None, geojson=False):
     """Return the cluster IDs of shared-bike stations in `city`, when running a
     K-means algorithm between `day` and `day+window`
 
@@ -492,6 +524,8 @@ def station_clusters(city, station_ids=None):
         City of interest, either `bordeaux` or `lyon`
     station_ids : list of integer
         Shared-bike station IDs ; if None, all the city stations are considered
+    geojson : boolean
+        If true, returns the clustered stations under the GeoJSON format
 
     Returns
     -------
@@ -508,7 +542,10 @@ def station_clusters(city, station_ids=None):
     if not rset:
         logger.warning("rset is empty")
         return {"data": []}
-    return {"data": [dict(zip(rset.keys(), row)) for row in rset]}
+    data = {"data": [dict(zip(rset.keys(), row)) for row in rset]}
+    if geojson:
+        return clustered_station_geojson(data["data"])
+    return data
 
 
 def cluster_profile_query(city):
