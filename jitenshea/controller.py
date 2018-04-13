@@ -8,7 +8,7 @@ import daiquiri
 import logging
 
 from itertools import groupby
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import namedtuple
 
 import pandas as pd
@@ -419,3 +419,147 @@ def daily_profile(city, station_ids, day, window):
             'sum': profile['sum'].values.tolist(),
             'mean': profile['mean'].values.tolist()})
     return {"data": result, "date": day, "window": window}
+
+
+def get_station_ids(city):
+    """Provides the list of shared-bike station IDs
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+
+    Returns
+    -------
+    list of integers
+        IDs of the shared-bike stations in the `city`
+    """
+    table, idcol = station_city_table(city)
+    query = ("SELECT {id} FROM {schema}.{table}"
+             ";").format(id=idcol, schema=config[city]["schema"], table=table)
+    eng = db()
+    rset = eng.execute(query).fetchall()
+    if not rset:
+        return []
+    return [int(row[0]) for row in rset]
+
+
+def station_cluster_query(city):
+    """SQL query to get cluster IDs for some shared_bike stations within `city`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either ̀bordeaux` or `lyon`
+
+    Returns
+    -------
+    str
+        SQL query that gives the cluster ID for shared-bike stations in `city`
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    return ("SELECT station_id AS id, "
+            "start AS start_date, "
+            "stop AS end_date, "
+            "cluster_id "
+            "FROM {schema}.clustered_stations "
+            "WHERE station_id IN %(id_list)s "
+            "AND start = %(start)s "
+            "AND stop = %(stop)s"
+            ";").format(schema=config[city]['schema'])
+
+
+def station_clusters(city, day, window, station_ids=None):
+    """Return the cluster IDs of shared-bike stations in `city`, when running a
+    K-means algorithm between `day` and `day+window`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+    day : date
+        Clustering algorithm beginning date
+    window : integer
+        Number of days used in the clustering algorithm
+    station_ids : list of integer
+        Shared-bike station IDs ; if None, all the city stations are considered
+
+    Returns
+    -------
+    pandas.DataFrame
+        Cluster profiles for each cluster, at each hour of the day
+
+    """
+    if isinstance(day, str):
+        day = datetime.strptime(day, '%Y-%m-%d')
+    if station_ids is None:
+        station_ids = get_station_ids(city)
+    window = time_window(day, window, False)
+    query = station_cluster_query(city)
+    eng = db()
+    rset = eng.execute(query,
+                       id_list=tuple(str(x) for x in station_ids),
+                       start=window.start,
+                       stop=window.stop)
+    if not rset:
+        logger.warning("rset is empty")
+        return pd.DataFrame({})
+    result = pd.DataFrame([dict(zip(rset.keys(), row)) for row in rset])
+    return result
+
+
+def cluster_profile_query(city):
+    """SQL query to get cluster descriptions as 24-houred timeseries within `city`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either ̀bordeaux` or `lyon`
+
+    Returns
+    -------
+    str
+        SQL query that gives the timeseries cluster profile in `city`
+
+    """
+    if city not in ('bordeaux', 'lyon'):
+        raise ValueError("City '{}' not supported.".format(city))
+    return ("SELECT * "
+            "FROM {schema}.centroids "
+            "WHERE start = %(start)s "
+            "AND stop = %(stop)s"
+            ";").format(schema=config[city]['schema'])
+
+
+def cluster_profiles(city, day, window):
+    """Return the cluster profiles in `city`, when running a K-means algorithm
+    between `day` and `day+window`
+
+    Parameters
+    ----------
+    city : str
+        City of interest, either `bordeaux` or `lyon`
+    day : date
+        Clustering algorithm beginning date
+    window : integer
+        Number of days used in the clustering algorithm
+
+    Returns
+    -------
+    pandas.DataFrame
+        Cluster profiles for each cluster, at each hour of the day
+    """
+    if isinstance(day, str):
+        day = datetime.strptime(day, '%Y-%m-%d')
+    window = time_window(day, window, False)
+    query = cluster_profile_query(city)
+    eng = db()
+    rset = eng.execute(query,
+                       start=window.start,
+                       stop=window.stop)
+    if not rset:
+        print("rset is empty")
+        return []
+    result = pd.DataFrame([dict(zip(rset.keys(), row)) for row in rset])
+    return result
