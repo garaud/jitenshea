@@ -142,6 +142,9 @@ daily_profile_parser.add_argument("date", required=True, dest="date", location="
 daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
                                    location="args", help="How many backward days?")
 
+clustering_parser = api.parser()
+clustering_parser.add_argument("geojson", required=False, default=False, dest='geojson',
+                                 location='args', help='GeoJSON format?')
 
 
 @api.route("/city")
@@ -251,10 +254,12 @@ class CityDailyStation(Resource):
 
 @api.route("/<string:city>/clustering/stations")
 class CityClusteredStation(Resource):
-    @api.doc(description="Clustered stations according to K-means algorithm")
+    @api.doc(parser=clustering_parser,
+             description="Clustered stations according to K-means algorithm")
     def get(self, city):
         check_city(city)
-        rset = controller.station_clusters(city)
+        args = clustering_parser.parse_args()
+        rset = controller.station_clusters(city, geojson=args['geojson'])
         if not rset:
             api.abort(404, ("No K-means algorithm trained in this city"))
         return jsonify(rset)
