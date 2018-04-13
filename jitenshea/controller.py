@@ -487,7 +487,7 @@ def station_clusters(city, day, window, station_ids=None):
 
     Returns
     -------
-    pandas.DataFrame
+    dict
         Cluster profiles for each cluster, at each hour of the day
 
     """
@@ -504,9 +504,8 @@ def station_clusters(city, day, window, station_ids=None):
                        stop=window.stop)
     if not rset:
         logger.warning("rset is empty")
-        return pd.DataFrame({})
-    result = pd.DataFrame([dict(zip(rset.keys(), row)) for row in rset])
-    return result
+        return {"data": []}
+    return {"data": [dict(zip(rset.keys(), row)) for row in rset]}
 
 
 def cluster_profile_query(city):
@@ -547,7 +546,7 @@ def cluster_profiles(city, day, window):
 
     Returns
     -------
-    pandas.DataFrame
+    dict
         Cluster profiles for each cluster, at each hour of the day
     """
     if isinstance(day, str):
@@ -559,7 +558,6 @@ def cluster_profiles(city, day, window):
                        start=window.start,
                        stop=window.stop)
     if not rset:
-        print("rset is empty")
-        return []
-    result = pd.DataFrame([dict(zip(rset.keys(), row)) for row in rset])
-    return result
+        logger.warning("rset is empty")
+        return {"data": []}
+    return {"data": [dict(zip(rset.keys(), row)) for row in rset]}
