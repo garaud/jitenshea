@@ -247,3 +247,25 @@ class CityDailyStation(Resource):
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
+
+
+@api.route("/<string:city>/clustering/stations")
+class CityClusteredStation(Resource):
+    @api.doc(description="Clustered stations according to K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        rset = controller.station_clusters(city)
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained in this city"))
+        return jsonify(rset)
+
+
+@api.route("/<string:city>/clustering/centroids")
+class CityClusterCentroids(Resource):
+    @api.doc(description="Centroids of clusters computed with a K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        rset = controller.cluster_profiles(city)
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained in this city"))
+        return jsonify(rset)
