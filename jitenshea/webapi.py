@@ -142,6 +142,9 @@ daily_profile_parser.add_argument("date", required=True, dest="date", location="
 daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
                                    location="args", help="How many backward days?")
 
+clustering_parser = api.parser()
+clustering_parser.add_argument("geojson", required=False, default=False, dest='geojson',
+                                 location='args', help='GeoJSON format?')
 
 
 @api.route("/city")
@@ -246,4 +249,43 @@ class CityDailyStation(Resource):
         rset = controller.daily_profile(city, ids, day, window)
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
+        return jsonify(rset)
+
+
+@api.route("/<string:city>/clustering/stations")
+class CityClusteredStation(Resource):
+    @api.doc(parser=clustering_parser,
+             description="Clustered stations according to K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        args = clustering_parser.parse_args()
+        rset = controller.station_clusters(city, geojson=args['geojson'])
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained in this city"))
+        return jsonify(rset)
+
+
+@api.route("/<string:city>/clustering/centroids")
+class CityClusterCentroids(Resource):
+    @api.doc(description="Centroids of clusters computed with a K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        rset = controller.cluster_profiles(city)
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained in this city"))
+        return jsonify(rset)
+
+@api.route("/<string:city>/clustering/centroids")
+class CityClusterCentroids(Resource):
+    @api.doc(parser=clustering_parser,
+             description="Centroids of clusters computed with a K-means algorithm")
+    def get(self, city):
+        check_city(city)
+        args = clustering_parser.parse_args()
+        start_date = parse_date(args["start_date"])
+        window = args["window"]
+        rset = controller.cluster_profiles(city, start_date, window)
+        if not rset:
+            api.abort(404, ("No K-means algorithm trained between {} and {}"
+                            "").format(start_date, start_date + window))
         return jsonify(rset)
