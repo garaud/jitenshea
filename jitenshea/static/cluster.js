@@ -55,18 +55,14 @@ $(document).ready(function() {
   var url = cityurl("clusterCentroids") + "/clustering/centroids";
   $.get(url, function(content) {
 
-    var cluster0 = content.data[0].hour.map(function(t, i) {
-      return [t, content.data[0].values[i]];
-    });
-    var cluster1 = content.data[1].hour.map(function(t, i) {
-      return [t, content.data[1].values[i]];
-    });
-    var cluster2 = content.data[2].hour.map(function(t, i) {
-      return [t, content.data[2].values[i]];
-    });
-    var cluster3 = content.data[3].hour.map(function(t, i) {
-      return [t, content.data[3].values[i]];
-    });
+    function mapCentroidValues(id){
+      return content.data[id].hour.map(function(t, i){
+	return [t, content.data[id].values[i]];
+      });
+    };
+    var clusters = {};
+    for (cluster = 0; cluster <= 3; cluster++)
+      clusters[content.data[cluster].cluster_id] = mapCentroidValues(cluster)
 
     Highcharts.chart('clusterCentroids', {
       title: {
@@ -83,25 +79,25 @@ $(document).ready(function() {
       colors: d3.schemeSet1,
       series: [{
         name: "cluster 0",
-        data: cluster0,
+        data: clusters[0],
         tooltip: {
           valueDecimals: 2
         }
       },{
         name: "cluster 1",
-        data: cluster1,
+        data: clusters[1],
         tooltip: {
           valueDecimals: 2
         }
       },{
         name: "cluster 2",
-        data: cluster2,
+        data: clusters[2],
         tooltip: {
           valueDecimals: 2
         }
       },{
         name: "cluster 3",
-        data: cluster3,
+        data: clusters[3],
         tooltip: {
           valueDecimals: 2
         }
