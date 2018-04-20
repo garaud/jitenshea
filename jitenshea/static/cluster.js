@@ -48,3 +48,64 @@ $(document).ready(function() {
     stationsMap(station_map, JSON.parse(geostations));
   }
 } );
+
+
+// Timeseries plot
+$(document).ready(function() {
+  var url = cityurl("clusterCentroids") + "/clustering/centroids";
+  $.get(url, function(content) {
+
+    var cluster0 = content.data[0].hour.map(function(t, i) {
+      return [t, content.data[0].values[i]];
+    });
+    var cluster1 = content.data[1].hour.map(function(t, i) {
+      return [t, content.data[1].values[i]];
+    });
+    var cluster2 = content.data[2].hour.map(function(t, i) {
+      return [t, content.data[2].values[i]];
+    });
+    var cluster3 = content.data[3].hour.map(function(t, i) {
+      return [t, content.data[3].values[i]];
+    });
+
+    Highcharts.chart('clusterCentroids', {
+      title: {
+        text: 'Cluster centroid definitions'
+      },
+      yAxis: {
+        title: {
+          text: 'Available bike percentage'
+        }
+      },
+      xAxis: {
+        type: "Hour of the day"
+      },
+      colors: d3.schemeSet1,
+      series: [{
+        name: "cluster 0",
+        data: cluster0,
+        tooltip: {
+          valueDecimals: 2
+        }
+      },{
+        name: "cluster 1",
+        data: cluster1,
+        tooltip: {
+          valueDecimals: 2
+        }
+      },{
+        name: "cluster 2",
+        data: cluster2,
+        tooltip: {
+          valueDecimals: 2
+        }
+      },{
+        name: "cluster 3",
+        data: cluster3,
+        tooltip: {
+          valueDecimals: 2
+        }
+      }]
+    } );
+  } );
+} );
