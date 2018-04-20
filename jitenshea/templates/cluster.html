@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>Station clusters in {{city|capitalize}}</h2>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item" aria-current="page"><a href="{{url_for('index')}}">Home</a></li>
+    <li class="breadcrumb-item" aria-current="page">
+      <a href="{{url_for('city_view', city=city)}}">{{city|capitalize}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Cluster</li>
+  </ol>
+</nav>
+
+<div class="container" id="stationSummary" data-city="{{city}}"
+     data-station-id="{{station_id}}">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+	<h4>select clustering training data</h4>
+      </div>
+      <div class="col-md-8">
+	<h4>select the cluster</h4>
+      </div>
+    </div>
+  </div>
+
+<h3>Map</h3>
+
+<div class="container">
+  <div id="clusteredStationMap" data-city="{{city}}" style="height: 450px;">
+  </div>
+</div>
+
+<h3>Time series</h3>
+
+<div id="clusterCentroids" data-city="{{city}}" style="width: 100%; height:400px;">
+</div>
+
+{% endblock %}
+
+{% block appjs %}
+<script src="{{ url_for('static', filename='cluster.js') }}" type="text/javascript"></script>
+{% endblock %}
