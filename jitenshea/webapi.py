@@ -98,8 +98,8 @@ api = Api(title='Jitenshea: Bicycle-sharing data analysis',
 
 # Parsers
 station_list_parser = api.parser()
-station_list_parser.add_argument("limit", required=False, default=100, dest='limit',
-                                 location='args', help='Limit')
+station_list_parser.add_argument("limit", required=False, type=int, default=100,
+                                 dest='limit', location='args', help='Limit')
 station_list_parser.add_argument("geojson", required=False, default=False, dest='geojson',
                                  location='args', help='GeoJSON format?')
 
@@ -112,8 +112,8 @@ daily_parser.add_argument("backward", required=False, type=inputs.boolean, defau
                           location="args", help="Backward window of days or not?")
 
 daily_list_parser = api.parser()
-daily_list_parser.add_argument("limit", required=False, default=20, dest='limit',
-                               location='args', help='Limit')
+daily_list_parser.add_argument("limit", required=False, type=int, default=20,
+                               dest='limit', location='args', help='Limit')
 daily_list_parser.add_argument("by", required=False, dest='order_by', default='station',
                                location='args', help="Order by 'station' or 'value'")
 daily_list_parser.add_argument("date", required=True, dest="date", location="args",
@@ -143,8 +143,9 @@ daily_profile_parser.add_argument("window", required=False, type=int, default=30
                                    location="args", help="How many backward days?")
 
 clustering_parser = api.parser()
-clustering_parser.add_argument("geojson", required=False, default=False, dest='geojson',
-                                 location='args', help='GeoJSON format?')
+clustering_parser.add_argument("geojson", required=False, type=inputs.boolean,
+                               default=False, dest='geojson', location='args',
+                               help='GeoJSON format?')
 
 
 @api.route("/city")
