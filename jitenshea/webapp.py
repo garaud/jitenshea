@@ -42,3 +42,9 @@ def city_view(city):
 def station_view(city, station_id):
     check_city(city)
     return render_template('station.html', city=city, station_id=station_id)
+
+
+@app.route("/<string:city>/cluster")
+def clustering_view(city):
+    check_city(city)
+    return render_template("cluster.html", city=city)
