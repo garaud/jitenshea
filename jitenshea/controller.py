@@ -500,7 +500,7 @@ def station_cluster_query(city):
             "citystation.nom AS nom, "
             "citystation.geom AS geom, "
             "rank() OVER (ORDER BY stop DESC) AS rank "
-            "FROM {schema}.clustered_stations AS cs "
+            "FROM {schema}.{cluster} AS cs "
             "JOIN {schema}.{table} AS citystation "
             "ON citystation.{idcol} = cs.station_id::varchar "
             "WHERE cs.station_id IN %(id_list)s) "
@@ -510,6 +510,7 @@ def station_cluster_query(city):
             "FROM ranked_clusters "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
+                        cluster=config[city]['clustering'],
                         table=table,
                         idcol=idname)
 
@@ -566,14 +567,15 @@ def cluster_profile_query(city):
         raise ValueError("City '{}' not supported.".format(city))
     return ("WITH ranked_centroids AS ("
             "SELECT *, rank() OVER (ORDER BY stop DESC) AS rank "
-            "FROM {schema}.centroids) "
+            "FROM {schema}.{centroid}) "
             "SELECT cluster_id, "
             "h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, "
             "h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, "
             "start, stop "
             "FROM ranked_centroids "
             "WHERE rank=1"
-            ";").format(schema=config[city]['schema'])
+            ";").format(schema=config[city]['schema'],
+                        centroid=config[city]['centroids'])
 
 
 def cluster_profiles(city):
