@@ -249,6 +249,15 @@ class BikeAvailability(luigi.Task):
         else:
             raise ValueError(("{} is an unknown city.".format(self.city)))
 
+    @property
+    def url(self):
+        if self.city == 'bordeaux':
+            return BORDEAUX_BIKEAVAILABILITY_URL.format(key=config['bordeaux']['key'])
+        elif self.city == 'lyon':
+            return LYON_BIKEAVAILABILITY_URL
+        else:
+            raise ValueError(("{} is an unknown city.".format(self.city)))
+
     def requires(self):
         return NormalizeStationTable(self.city)
 
@@ -259,15 +268,16 @@ class BikeAvailability(luigi.Task):
         return luigi.LocalTarget(self.path.format(year=year, month=month, day=day, ts=ts), format=UTF8)
 
     def run(self):
+        resp = requests.get(self.url)
         with self.output().open('w') as fobj:
             if self.city == 'bordeaux':
-                resp = requests.get(BORDEAUX_BIKEAVAILABILITY_URL.format(key=config['bordeaux']['key']))
                 fobj.write(resp.content.decode('ISO-8859-1').encode('utf-8').decode('utf-8'))
-            else:
-                resp = requests.get(LYON_BIKEAVAILABILITY_URL)
-                resp.raise_for_status
+            elif self.city == 'lyon':
                 data = resp.json()
                 json.dump(resp.json(), fobj, ensure_ascii=False)
+            else:
+                raise ValueError(("{} is an unknown city.".format(self.city)))
+
 
 class AvailabilityToCSV(luigi.Task):
     """Turn real-time bike availability to CSV files
