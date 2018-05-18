@@ -172,3 +172,46 @@ class ShapefileIntoDB(luigi.Task):
             fobj.write("shp2pgsql {} at {}\n".format(shpfile, dt.now()))
             fobj.write("Create {schema}.{table}\n"
                        .format(schema=self.city, table=self.table))
+
+class NormalizeStationTable(PostgresQuery):
+    """
+    """
+    city = luigi.Parameter()
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    query = ("DROP TABLE IF EXISTS {schema}.stations; "
+             "CREATE TABLE {schema}.stations"
+             " AS "
+             "SELECT {id} AS id, {name} AS name, "
+             "{address} AS address, {city} AS city, "
+             "{nb_stations} AS nb_stations, geom "
+             "FROM {schema}.raw_stations"
+             ";")
+
+    @property
+    def table(self):
+        return '{schema}.stations'.format(schema=self.city)
+
+    def requires(self):
+        return ShapefileIntoDB(self.city)
+
+    def run(self):
+        connection = self.output().connect()
+        cursor = connection.cursor()
+        sql = self.query.format(schema=self.city,
+                                id=config[self.city]['feature_id'],
+                                name=config[self.city]['feature_name'],
+                                address=config[self.city]['feature_address'],
+                                city=config[self.city]['feature_city'],
+                                nb_stations=config[self.city]['feature_nb_stations'])
+        print(sql)
+        cursor.execute(sql)
+        # Update marker table
+        self.output().touch(connection)
+        # commit and close connection
+        connection.commit()
+        connection.close()
