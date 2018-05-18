@@ -135,3 +135,40 @@ class UnzipTask(luigi.Task):
             fobj.write("\n")
             zip_ref.extractall(os.path.dirname(self.input().path))
             zip_ref.close()
+
+
+class ShapefileIntoDB(luigi.Task):
+    """Dump a shapefile into a table
+    """
+    city = luigi.Parameter()
+    table = "raw_stations"
+
+    @property
+    def projection(self):
+        return config[self.city]['srid']
+
+    @property
+    def typename(self):
+        return config[self.city]['typename']
+
+    def requires(self):
+        return {"zip": UnzipTask(city=self.city),
+                "schema": CreateSchema(schema=self.city)}
+
+    def output(self):
+        filepath = '_'.join(['task', 'shp2pgsql', "to",
+                             self.city, self.table, 'proj', self.projection])
+        return luigi.LocalTarget(os.path.join(DATADIR, self.city,
+                                              filepath + '.txt'))
+
+    def run(self):
+        table = self.city + '.' + self.table
+        dirname = os.path.abspath(os.path.dirname(self.input()['zip'].path))
+        shpfile = os.path.join(dirname, self.typename + '.shp')
+        shp2args = shp2pgsql_args(self.projection, shpfile, table)
+        psqlargs = psql_args()
+        with self.output().open('w') as fobj:
+            sh.psql(sh.shp2pgsql(shp2args), psqlargs)
+            fobj.write("shp2pgsql {} at {}\n".format(shpfile, dt.now()))
+            fobj.write("Create {schema}.{table}\n"
+                       .format(schema=self.city, table=self.table))
