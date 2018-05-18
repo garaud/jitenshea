@@ -215,3 +215,41 @@ class NormalizeStationTable(PostgresQuery):
         # commit and close connection
         connection.commit()
         connection.close()
+
+
+class BikeAvailability(luigi.Task):
+    """
+    """
+    city = luigi.Parameter()
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+
+    @property
+    def path(self):
+        if self.city == 'bordeaux':
+            return os.path.join(DATADIR, self.city, '{year}',
+                                '{month:02d}', '{day:02d}', '{ts}.xml')
+        elif self.city == 'lyon':
+            return os.path.join(DATADIR, self.city, '{year}',
+                                '{month:02d}', '{day:02d}', '{ts}.json')
+        else:
+            raise ValueError(("{} is an unknown city.".format(self.city)))
+
+    def requires(self):
+        return NormalizeStationTable(self.city)
+
+    def output(self):
+        triple = lambda x: (x.year, x.month, x.day)
+        year, month, day = triple(self.timestamp)
+        ts = self.timestamp.strftime("%HH%M") # 16H35
+        return luigi.LocalTarget(self.path.format(year=year, month=month, day=day, ts=ts), format=UTF8)
+
+    def run(self):
+        with self.output().open('w') as fobj:
+            if self.city == 'bordeaux':
+                resp = requests.get(BORDEAUX_BIKEAVAILABILITY_URL.format(key=config['bordeaux']['key']))
+                fobj.write(resp.content.decode('ISO-8859-1').encode('utf-8').decode('utf-8'))
+            else:
+                resp = requests.get(LYON_BIKEAVAILABILITY_URL)
+                resp.raise_for_status
+                data = resp.json()
+                json.dump(resp.json(), fobj, ensure_ascii=False)
