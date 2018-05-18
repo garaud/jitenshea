@@ -337,7 +337,7 @@ class AvailabilityToDB(CopyToTable):
 
     @property
     def table(self):
-        return '{schema}.timeseries'.format(schema=config[self.city]['schema'])
+        return '{schema}.timeseries'.format(schema=self.city)
 
     def rows(self):
         """overload the rows method to skip the first line (header)
@@ -382,7 +382,7 @@ class AggregateTransaction(luigi.Task):
         query = ("SELECT DISTINCT * FROM {schema}.timeseries "
                  "WHERE timestamp >= %(start)s AND timestamp < %(stop)s "
                  "ORDER BY timestamp, id"
-                 ";").format(schema=config[self.city]["schema"])
+                 ";").format(schema=self.city)
         eng = db()
         query_params = {"start": self.date,
                         "stop": self.date + timedelta(1)}
