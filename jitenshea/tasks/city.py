@@ -397,7 +397,7 @@ class AggregateTransaction(luigi.Task):
         with self.output().open('w') as fobj:
             transactions.to_csv(fobj, index=False)
 
-class TransactionsIntoDB(copyToTable):
+class TransactionsIntoDB(CopyToTable):
     """Copy shared-bike transaction data into the database
     """
     city = luigi.Parameter()
@@ -414,7 +414,7 @@ class TransactionsIntoDB(copyToTable):
 
     @property
     def table(self):
-        return '{schema}.transactions'.format(schema=config[self.city]['schema'])
+        return '{schema}.daily_transaction'.format(schema=self.city)
 
     def rows(self):
         """overload the rows method to skip the first line (header) and add date value
