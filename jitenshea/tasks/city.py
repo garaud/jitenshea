@@ -316,3 +316,46 @@ class AvailabilityToCSV(luigi.Task):
                       "available_bikes", "status"]
         with self.output().open('w') as fobj:
             df.to_csv(fobj, index=False)
+
+
+class AvailabilityToDB(CopyToTable):
+    """Insert bike availability data into a PostgreSQL table
+    """
+    city = luigi.Parameter()
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    columns = [('id', 'INT'),
+               ('timestamp', 'TIMESTAMP'),
+               ('available_stands', 'INT'),
+               ('available_bikes', 'INT'),
+               ('status', 'VARCHAR(12)')]
+
+    @property
+    def table(self):
+        return '{schema}.timeseries'.format(schema=config[self.city]['schema'])
+
+    def rows(self):
+        """overload the rows method to skip the first line (header)
+        """
+        with self.input().open('r') as fobj:
+            df = pd.read_csv(fobj)
+            for idx, row in df.iterrows():
+                yield row.values
+
+    def requires(self):
+        return AvailabilityToCSV(self.city, self.timestamp)
+
+    def rows(self):
+        """overload the rows method to skip the first line (header)
+        """
+        with self.input().open('r') as fobj:
+            df = pd.read_csv(fobj)
+            for idx, row in df.iterrows():
+                if row.status == 'None' or row.available_stands == 'None':
+                    continue
+                yield row.values
