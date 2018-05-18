@@ -280,18 +280,6 @@ class AvailabilityToCSV(luigi.Task):
         return os.path.join(DATADIR, self.city, '{year}',
                             '{month:02d}', '{day:02d}', '{ts}.csv')
 
-    @property
-    def columns(self):
-        if self.city == 'bordeaux':
-            return ["gid", "ident", "type", "nom", "etat",
-                    "nbplaces", "nbvelos", "heure"]
-        elif self.city == 'lyon':
-            return ['number', 'last_update', 'bike_stands',
-                    'available_bike_stands', 'available_bikes',
-                    'availabilitycode', 'availability', 'bonus', 'status']
-        else:
-            raise ValueError(("{} is an unknown city.".format(self.city)))
-
     def requires(self):
         return BikeAvailability(self.city)
 
@@ -319,5 +307,12 @@ class AvailabilityToCSV(luigi.Task):
                 df = pd.DataFrame(data['values'], columns=data['fields'])
             else:
                 raise ValueError(("{} is an unknown city.".format(self.city)))
+        df = df[[config[self.city]['feature_avl_id'],
+                 config[self.city]['feature_timestamp'],
+                 config[self.city]['feature_avl_stands'],
+                 config[self.city]['feature_avl_bikes'],
+                 config[self.city]['feature_status']]]
+        df.columns = ["id", "timestamp", "available_stands",
+                      "available_bikes", "status"]
         with self.output().open('w') as fobj:
-            df[self.columns].to_csv(fobj, index=False)
+            df.to_csv(fobj, index=False)
