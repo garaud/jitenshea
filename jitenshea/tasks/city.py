@@ -426,3 +426,211 @@ class TransactionsIntoDB(CopyToTable):
 
     def requires(self):
         return AggregateTransaction(self.city, self.date)
+
+class ComputeClusters(luigi.Task):
+    """Compute clusters corresponding to bike availability in `city` stations
+    between a `start` and an `end` date
+    """
+    city = luigi.Parameter()
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def outputpath(self):
+        fname = "kmeans-{}-to-{}.h5".format(self.start, self.stop)
+        return os.path.join(DATADIR, self.city, 'clustering', fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def run(self):
+        query = ("SELECT id, timestamp, available_bikes "
+                 "FROM {}.timeseries "
+                 "WHERE timestamp >= %(start)s "
+                 "AND timestamp < %(stop)s;"
+                 "").format(self.city)
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        df.columns = ["station_id", "ts", "nb_bikes"]
+        clusters = compute_clusters(df)
+        self.output().makedirs()
+        path = self.output().path
+        clusters['labels'].to_hdf(path, '/clusters')
+        clusters['centroids'].to_hdf(path, '/centroids')
+
+class StoreClustersToDatabase(CopyToTable):
+    """Read the cluster labels from `DATADIR/<city>/clustering.h5` file and store
+    them into `clustered_stations`
+
+    """
+    city = luigi.Parameter()
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    columns = [('station_id', 'INT'),
+               ('start', 'DATE'),
+               ('stop', 'DATE'),
+               ('cluster_id', 'INT')]
+
+    @property
+    def table(self):
+        return '{schema}.clustered_stations'.format(schema=self.city)
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'clusters')
+        for _, row in clusters.iterrows():
+            modified_row = list(row.values)
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
+            yield modified_row
+
+    def requires(self):
+        return ComputeClusters(self.city, self.start, self.stop)
+
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (station_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
+
+class StoreCentroidsToDatabase(CopyToTable):
+    """Read the cluster centroids from `DATADIR/<city>/clustering.h5` file and
+    store them into `centroids`
+
+    """
+    city = luigi.Parameter()
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    first_columns = [('cluster_id', 'INT'),
+                     ('start', 'DATE'),
+                     ('stop', 'DATE')]
+
+    @property
+    def columns(self):
+        if len(self.first_columns) == 3:
+            self.first_columns.extend([('h'+str(i), 'DOUBLE PRECISION')
+                                      for i in range(24)])
+        return self.first_columns
+
+    @property
+    def table(self):
+        return '{schema}.centroids'.format(schema=self.city)
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, 'centroids')
+        for _, row in clusters.iterrows():
+            modified_row = list(row.values)
+            modified_row[0] = int(modified_row[0])
+            modified_row.insert(1, self.stop)
+            modified_row.insert(1, self.start)
+            yield modified_row
+
+    def requires(self):
+        return ComputeClusters(self.city, self.start, self.stop)
+
+    def create_table(self, connection):
+        if len(self.columns[0]) == 1:
+            # only names of columns specified, no types
+            raise NotImplementedError(("create_table() not implemented for %r "
+                                       "and columns types not specified")
+                                      % self.table)
+        elif len(self.columns[0]) == 2:
+            # if columns is specified as (name, type) tuples
+            coldefs = ','.join('{name} {type}'.format(name=name, type=type)
+                               for name, type in self.columns)
+            query = ("CREATE TABLE {table} ({coldefs}, "
+                     "PRIMARY KEY (cluster_id, start, stop));"
+                     "").format(table=self.table, coldefs=coldefs)
+            connection.cursor().execute(query)
+
+class Clustering(luigi.Task):
+    """Clustering master task
+
+    """
+    city = luigi.Parameter()
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+
+    def requires(self):
+        yield StoreClustersToDatabase(self.city, self.start, self.stop)
+        yield StoreCentroidsToDatabase(self.city, self.start, self.stop)
+
+
+class TrainXGBoost(luigi.Task):
+    """Train a XGBoost model between `start` and `stop` dates to predict bike
+    availability at each station in `city`
+
+    Attributes
+    ----------
+    city : luigi.Parameter
+        City of interest, *e.g.* Bordeaux or Lyon
+    start : luigi.DateParameter
+        Training start date
+    stop : luigi.DataParameter
+        Training stop date upper bound (actually the end date is computed with
+    `validation`)
+    validation : luigi.DateMinuteParameter
+        Date that bounds the training set and the validation set during the
+    XGBoost model training
+    frequency : DateOffset, timedelta or str
+        Indicates the prediction frequency
+    """
+    city = luigi.Parameter()
+    start = luigi.DateParameter(default=yesterday())
+    stop = luigi.DateParameter(default=date.today())
+    validation = luigi.DateMinuteParameter(default=dt.now() - timedelta(hours=1))
+    frequency = luigi.Parameter(default="30T")
+
+    def outputpath(self):
+        fname = "{}-to-{}-at-{}-freq-{}.model".format(self.start, self.stop,
+                                           self.validation.isoformat(),
+                                           self.frequency)
+        return os.path.join(DATADIR, self.city, 'xgboost-model', fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def run(self):
+        query = ("SELECT DISTINCT id AS station_id, timestamp AS ts, "
+                 "available_bikes AS nb_bikes, available_stands AS nb_stands, "
+                 "available_bikes::float / (available_bikes::float "
+                 "+ available_stands::float) AS probability "
+                 "FROM {schema}.timeseries "
+                 "WHERE timestamp >= %(start)s "
+                 "AND timestamp < %(stop)s "
+                 "AND (available_bikes > 0 OR available_stands > 0) "
+                 "AND (status = 'CONNECTEE' OR status = 'OPEN')"
+                 "ORDER BY id, timestamp"
+                 ";").format(schema=self.city)
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        if df.empty:
+            raise Exception("There is not any data to process in the DataFrame. "
+                            + "Please check the dates.")
+        prediction_model = train_prediction_model(df, self.validation, self.frequency)
+        self.output().makedirs()
+        prediction_model.save_model(self.output().path)
