@@ -359,3 +359,70 @@ class AvailabilityToDB(CopyToTable):
                 if row.status == 'None' or row.available_stands == 'None':
                     continue
                 yield row.values
+
+
+class AggregateTransaction(luigi.Task):
+    """Aggregate shared-bike transactions data into a CSV file (one transaction
+    = one bike taken, or one bike dropped off).
+    """
+    city = luigi.Parameter()
+    date = luigi.DateParameter(default=yesterday())
+
+    @property
+    def path(self):
+        return os.path.join(DATADIR, self.city, '{year}',
+                            '{month:02d}', '{day:02d}', 'transactions.csv')
+
+    def output(self):
+        triple = lambda x: (x.year, x.month, x.day)
+        year, month, day = triple(self.date)
+        return luigi.LocalTarget(self.path.format(year=year, month=month, day=day), format=UTF8)
+
+    def run(self):
+        query = ("SELECT DISTINCT * FROM {schema}.timeseries "
+                 "WHERE timestamp >= %(start)s AND timestamp < %(stop)s "
+                 "ORDER BY timestamp, id"
+                 ";").format(schema=config[self.city]["schema"])
+        eng = db()
+        query_params = {"start": self.date,
+                        "stop": self.date + timedelta(1)}
+        df = pd.io.sql.read_sql_query(query, eng, params=query_params)
+        transactions = (df.query("status == 'OPEN' or status == 'CONNECTEE'")
+                        .groupby("id")['available_bikes']
+                        .apply(lambda s: s.diff().abs().sum())
+                        .dropna()
+                        .to_frame()
+                        .reset_index())
+        transactions = transactions.rename_axis({"available_bikes": "transactions"}, axis=1)
+        with self.output().open('w') as fobj:
+            transactions.to_csv(fobj, index=False)
+
+class TransactionsIntoDB(copyToTable):
+    """Copy shared-bike transaction data into the database
+    """
+    city = luigi.Parameter()
+    date = luigi.DateParameter(default=yesterday())
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    columns = [('id', 'INT'),
+               ('number', 'FLOAT'),
+               ('date', 'DATE')]
+
+    @property
+    def table(self):
+        return '{schema}.transactions'.format(schema=config[self.city]['schema'])
+
+    def rows(self):
+        """overload the rows method to skip the first line (header) and add date value
+        """
+        with self.input().open('r') as fobj:
+            next(fobj)
+            for line in fobj:
+                yield line.strip('\n').split(',') + [self.date]
+
+    def requires(self):
+        return AggregateTransaction(self.city, self.date)
