@@ -21,6 +21,8 @@ import zipfile
 from datetime import datetime as dt
 from datetime import date, timedelta
 
+from lxml import etree
+
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -52,6 +54,19 @@ def yesterday():
     """Return the day before today
     """
     return date.today() - timedelta(1)
+
+def extract_xml_feature(node, namespace='{http://data.bordeaux-metropole.fr/wfs}'):
+    """Return some attributes from XML/GML file for one specific station
+    """
+    get = lambda x: node.findtext(namespace + x)
+    return [("gid", int(get("GID"))),
+            ("ident", int(get("IDENT"))),
+            ("type", get("TYPE")),
+            ("nom", get("NOM")),
+            ("etat", get("ETAT")),
+            ("nbplaces", int(get('NBPLACES'))),
+            ("nbvelos", int(get("NBVELOS"))),
+            ("heure", pd.Timestamp(get("HEURE")))]
 
 
 class CreateSchema(PostgresQuery):
@@ -253,3 +268,56 @@ class BikeAvailability(luigi.Task):
                 resp.raise_for_status
                 data = resp.json()
                 json.dump(resp.json(), fobj, ensure_ascii=False)
+
+class AvailabilityToCSV(luigi.Task):
+    """Turn real-time bike availability to CSV files
+    """
+    city = luigi.Parameter()
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+
+    @property
+    def path(self):
+        return os.path.join(DATADIR, self.city, '{year}',
+                            '{month:02d}', '{day:02d}', '{ts}.csv')
+
+    @property
+    def columns(self):
+        if self.city == 'bordeaux':
+            return ["gid", "ident", "type", "nom", "etat",
+                    "nbplaces", "nbvelos", "heure"]
+        elif self.city == 'lyon':
+            return ['number', 'last_update', 'bike_stands',
+                    'available_bike_stands', 'available_bikes',
+                    'availabilitycode', 'availability', 'bonus', 'status']
+        else:
+            raise ValueError(("{} is an unknown city.".format(self.city)))
+
+    def requires(self):
+        return BikeAvailability(self.city)
+
+    def output(self):
+        triple = lambda x: (x.year, x.month, x.day)
+        year, month, day = triple(self.timestamp)
+        ts = self.timestamp.strftime('%HH%M') # 16H35
+        return luigi.LocalTarget(self.path.format(year=year, month=month,
+                                                  day=day, ts=ts, format=UTF8))
+
+    def run(self):
+        with self.input().open() as fobj:
+            if self.city == 'bordeaux':
+                tree = etree.parse(fobj)
+                wfs_ns = '{http://www.opengis.net/wfs/2.0}'
+                bm_ns = '{http://data.bordeaux-metropole.fr/wfs}'
+                elements = (node.find(bm_ns + 'CI_VCUB_P') for node in tree.findall(wfs_ns + 'member'))
+                data = []
+                for node in elements:
+                    data.append(extract_xml_feature(node))
+                df = pd.DataFrame([dict(x) for x in data])
+                df = df.sort_values(by="ident")
+            elif self.city == 'lyon':
+                data = json.load(fobj)
+                df = pd.DataFrame(data['values'], columns=data['fields'])
+            else:
+                raise ValueError(("{} is an unknown city.".format(self.city)))
+        with self.output().open('w') as fobj:
+            df[self.columns].to_csv(fobj, index=False)
