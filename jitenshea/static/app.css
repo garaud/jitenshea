@@ -4,3 +4,65 @@ html, body {
     margin: 1em;
     margin-right: 3em;
 }
+
+
+.jt-header {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    height: 300px;
+    color: black;
+    padding: 30px;
+}
+.jt-header img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    opacity: 0.5;
+    filter: blur(1px);
+}
+
+
+
+.city {
+  width: 200px;
+  height: 200px;
+  display: block;
+  position: relative;
+}
+
+.city::after {
+  content: "";
+  background: url(lyon-city.png);
+  opacity: 0.5;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+
+/* .jt-citylist-header { */
+/*     position: relative; */
+/*     overflow: hidden; */
+/*     height: 300px; */
+/*     color: black; */
+/*     padding: 30px; */
+/* } */
+
+/* .jt-citylist-header img { */
+/*     position: absolute; */
+/*     left: 0; */
+/*     top: 0; */
+/*     width: 100%; */
+/*     height: auto; */
+/*     opacity: 0.5; */
+/* } */
+
+
+/* oslandia color rgb(58, 116, 172); */
+

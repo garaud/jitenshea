@@ -2,38 +2,70 @@
 
 {% block content %}
 
-<h2>Bicycle-sharing data analysis</h2>
 
-<p>Get and visualize some bicycle-sharing Open Data.</p>
-<p>Developed and hosted by the <a href="http://oslandia.com">Oslandia</a> team!</p>
+<div class="container jt-header">
+  <h1><u>Bicycle-sharing Data Analysis</u></h1>
+  <img src="{{ url_for('static', filename='bicyle-sharing-background.jpg') }}">
+</div>
 
-<p>See the <a href="https://github.com/garaud/jitenshea">project page on Github</a>.</p>
-<p>Visit also the <a href="http://data.oslandia.io">data.oslanda.io</a> website to
-  learn more about data processing and machine learning Oslandia projects.</p>
 
-<h3>Summary</h3>
+<div class="container">
+  <h4>Description</h4>
+  <p>Get and visualize some bicycle-sharing <b>Open Data</b>.</p>
+  <p>Developed and hosted by the <a href="http://oslandia.com">Oslandia</a> team!</p>
 
-<p>Available for the following cities
-  <ul>
-    <li><a href="{{ url_for('city_view', city='bordeaux') }}">Bordeaux</a> (France)</li>
-    <li><a href="{{ url_for('city_view', city='lyon') }}">Lyon</a> (France)</li>
-  </ul>
-</p>
+  <p>See the <a href="https://github.com/garaud/jitenshea">project page on Github</a>.</p>
+  <p>Visit also the <a href="http://data.oslandia.io">data.oslanda.io</a> website to
+    learn more about data processing and machine learning Oslandia projects.</p>
 
-<h3>Access</h3>
+  This an Open Source projects makes with Open Data and Open Source dependencies:
+  python, postgresql, postgis, etc.
+</div>
 
-<p>
-  Examples:
+<br />
 
-  <ul>
-    <li>Get some information from a city: <tt>URL/api/bordeaux/station</tt></li>
-    <li>Retrieve details for a given bicycle-sharing station: <tt>URL/api/lyon/station/1009</tt></li>
-  </ul>
+<div class="row">
+  <div class="container col-md-3">
+  <div class="panel panel-default">
+    <div class="panel-header">
+      <h3 class="panel-title">Data Processing<i data-feather="database"></i></h3>
+    </div>
+    <div class="panel-body">
+      <p>Data pipeline and dataprocessing. Automated tasks from
+        Open Data to the database.</p>
+      <a class="btn btn-primary" href="https://github.com/garaud/jitenshea">Github</a>
+    </div>
+  </div>
+  </div>
 
-  You also can read and try <a href="{{ url_for('swagger_ui') }}">the REST API</a> generated
-  by <a href="https://flask-restplus.readthedocs.org/en/stable/">Flask-RESTPlus</a>
-  and <a href="http://swagger.io/">Swagger</a>.
-</p>
+  <div class="container col-md-3">
+  <div class="panel panel-default">
+    <div class="panel-header">
+      <h3 class="panel-title">Data Analysis<i data-feather="bar-chart-2"></i></h3>
+    </div>
+    <div class="panel-body">
+      <p>Get some stats from history timeseries: most used
+        bicycle stations, peak frequency, etc.</p>
+      <a class="btn btn-primary" href="{{ url_for('citylist') }}">Cities page</a>
+    </div>
+  </div>
+  </div>
+
+
+  <div class="container col-md-3">
+  <div class="panel panel-default">
+    <div class="panel-header">
+      <h3 class="panel-title">API <i data-feather="code"></i></h3>
+    </div>
+    <div class="panel-body">
+      <p>Retrieve the data and the analysis with a simple Web
+        API. Get some data in JSON or GeoJSON.</p>
+      <a class="btn btn-primary" href="{{ url_for('swagger_ui') }}">API</a>
+    </div>
+  </div>
+  </div>
+</div>
+
 
 
 {% endblock %}
