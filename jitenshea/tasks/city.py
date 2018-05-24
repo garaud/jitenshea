@@ -1,18 +1,14 @@
 """Luigi tasks to retrieve and process bike data
 
-Highly inspired from the Tempus demo Luigi tasks that handle GrandLyon open
-datasets: https://gitlab.com/Oslandia/tempus_demos
-
 Supported cities:
 
 * Bordeaux
-  - stations URL:
-  - real-time bike availability URL:
+  - stations URL: https://data.bordeaux-metropole.fr/files.php?gid=43&format=2
+  - real-time bike availability URL: https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&typename=CI_VCUB_P
 
 * Lyon
-  - stations URL:
-  - real-time bike availability URL:
-
+  - stations URL: https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov
+  - real-time bike availability URL: https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json
 """
 
 import os
@@ -23,9 +19,7 @@ from datetime import date, timedelta
 
 from lxml import etree
 
-import numpy as np
 import pandas as pd
-from sklearn.cluster import KMeans
 
 import sh
 
@@ -39,11 +33,11 @@ from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 from jitenshea.stats import compute_clusters, train_prediction_model
 
+
 _HERE = os.path.abspath(os.path.dirname(__file__))
 DATADIR = 'datarepo'
 
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
-# BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_STVEL_P'
 BORDEAUX_BIKEAVAILABILITY_URL = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_VCUB_P'
 
 LYON_STATION_URL = 'https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov'
@@ -54,6 +48,7 @@ def yesterday():
     """Return the day before today
     """
     return date.today() - timedelta(1)
+
 
 def extract_xml_feature(node, namespace='{http://data.bordeaux-metropole.fr/wfs}'):
     """Return some attributes from XML/GML file for one specific station
@@ -188,6 +183,7 @@ class ShapefileIntoDB(luigi.Task):
             fobj.write("Create {schema}.{table}\n"
                        .format(schema=self.city, table=self.table))
 
+
 class NormalizeStationTable(PostgresQuery):
     """
     """
@@ -223,7 +219,6 @@ class NormalizeStationTable(PostgresQuery):
                                 address=config[self.city]['feature_address'],
                                 city=config[self.city]['feature_city'],
                                 nb_stations=config[self.city]['feature_nb_stations'])
-        print(sql)
         cursor.execute(sql)
         # Update marker table
         self.output().touch(connection)
@@ -407,6 +402,7 @@ class AggregateTransaction(luigi.Task):
         with self.output().open('w') as fobj:
             transactions.to_csv(fobj, index=False)
 
+
 class TransactionsIntoDB(CopyToTable):
     """Copy shared-bike transaction data into the database
     """
@@ -436,6 +432,7 @@ class TransactionsIntoDB(CopyToTable):
 
     def requires(self):
         return AggregateTransaction(self.city, self.date)
+
 
 class ComputeClusters(luigi.Task):
     """Compute clusters corresponding to bike availability in `city` stations
@@ -468,6 +465,7 @@ class ComputeClusters(luigi.Task):
         path = self.output().path
         clusters['labels'].to_hdf(path, '/clusters')
         clusters['centroids'].to_hdf(path, '/centroids')
+
 
 class StoreClustersToDatabase(CopyToTable):
     """Read the cluster labels from `DATADIR/<city>/clustering.h5` file and store
@@ -518,6 +516,7 @@ class StoreClustersToDatabase(CopyToTable):
                      "PRIMARY KEY (station_id, start, stop));"
                      "").format(table=self.table, coldefs=coldefs)
             connection.cursor().execute(query)
+
 
 class StoreCentroidsToDatabase(CopyToTable):
     """Read the cluster centroids from `DATADIR/<city>/clustering.h5` file and
@@ -574,6 +573,7 @@ class StoreCentroidsToDatabase(CopyToTable):
                      "PRIMARY KEY (cluster_id, start, stop));"
                      "").format(table=self.table, coldefs=coldefs)
             connection.cursor().execute(query)
+
 
 class Clustering(luigi.Task):
     """Clustering master task
