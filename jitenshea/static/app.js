@@ -17,3 +17,7 @@ function getYesterday() {
   return yesterday.toISOString().substring(0, 10);
 };
 
+// feather icons https://github.com/feathericons/feather
+$(document).ready(function() {
+  feather.replace();
+});
