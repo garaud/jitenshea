@@ -20,13 +20,14 @@
     "tests"
   ],
   "dependencies": {
-    "bootstrap": "~3.3.6",
+    "bootstrap": "~4.0",
     "leaflet": "^1.2.0",
     "datatables": "datatable#^1.10.16",
     "highcharts": "^6.0.3",
     "leaflet-ajax": "^2.1.0",
     "turfjs": "*",
     "d3-scale-chromatic": "^1.1.1",
-    "swagger-ui": "^3.5.0"
+    "swagger-ui": "^3.5.0",
+    "feather": "https://github.com/feathericons/feather.git#4.7.0"
   }
 }

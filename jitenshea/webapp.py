@@ -29,6 +29,10 @@ def index():
 def swagger_ui():
     return render_template("swagger-ui.html")
 
+@app.route('/city')
+def citylist():
+    return render_template('citylist.html')
+
 @app.route("/<string:city>")
 def city_view(city):
     check_city(city)
