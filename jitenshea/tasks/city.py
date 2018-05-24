@@ -306,10 +306,15 @@ class AvailabilityToCSV(luigi.Task):
                 for node in elements:
                     data.append(extract_xml_feature(node))
                 df = pd.DataFrame([dict(x) for x in data])
-                df = df.sort_values(by="ident")
+                status_key = config[self.city]['feature_status']
+                df[status_key] = df[status_key].apply(
+                    lambda x: 'open' if x == 'CONNECTEE' else 'close')
             elif self.city == 'lyon':
                 data = json.load(fobj)
                 df = pd.DataFrame(data['values'], columns=data['fields'])
+                status_key = config[self.city]['feature_status']
+                df[status_key] = df[status_key].apply(
+                    lambda x: 'open' if x == 'OPEN' else 'close')
             else:
                 raise ValueError(("{} is an unknown city.".format(self.city)))
         df = df[[config[self.city]['feature_avl_id'],
@@ -319,6 +324,7 @@ class AvailabilityToCSV(luigi.Task):
                  config[self.city]['feature_status']]]
         df.columns = ["id", "timestamp", "available_stands",
                       "available_bikes", "status"]
+        df = df.sort_values(by="id")
         with self.output().open('w') as fobj:
             df.to_csv(fobj, index=False)
 
@@ -392,7 +398,7 @@ class AggregateTransaction(luigi.Task):
         query_params = {"start": self.date,
                         "stop": self.date + timedelta(1)}
         df = pd.io.sql.read_sql_query(query, eng, params=query_params)
-        transactions = (df.query("status == 'OPEN' or status == 'CONNECTEE'")
+        transactions = (df.query("status == 'open'")
                         .groupby("id")['available_bikes']
                         .apply(lambda s: s.diff().abs().sum())
                         .dropna()
@@ -635,7 +641,7 @@ class TrainXGBoost(luigi.Task):
                  "WHERE timestamp >= %(start)s "
                  "AND timestamp < %(stop)s "
                  "AND (available_bikes > 0 OR available_stands > 0) "
-                 "AND (status = 'CONNECTEE' OR status = 'OPEN')"
+                 "AND (status = 'open')"
                  "ORDER BY id, timestamp"
                  ";").format(schema=self.city)
         eng = db()
