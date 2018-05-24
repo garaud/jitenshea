@@ -488,7 +488,9 @@ class StoreClustersToDatabase(CopyToTable):
 
     @property
     def table(self):
-        return '{schema}.clustered_stations'.format(schema=self.city)
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config[self.city]['clustering'])
 
     def rows(self):
         inputpath = self.input().path
@@ -544,7 +546,9 @@ class StoreCentroidsToDatabase(CopyToTable):
 
     @property
     def table(self):
-        return '{schema}.centroids'.format(schema=self.city)
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config[self.city]['centroids'])
 
     def rows(self):
         inputpath = self.input().path
