@@ -340,7 +340,7 @@ class AvailabilityToDB(CopyToTable):
     user = config['database']['user']
     password = None
 
-    columns = [('id', 'INT'),
+    columns = [('id', 'VARCHAR'),
                ('timestamp', 'TIMESTAMP'),
                ('available_stands', 'INT'),
                ('available_bikes', 'INT'),
@@ -420,7 +420,7 @@ class TransactionsIntoDB(CopyToTable):
     user = config['database']['user']
     password = None
 
-    columns = [('id', 'INT'),
+    columns = [('id', 'VARCHAR'),
                ('number', 'FLOAT'),
                ('date', 'DATE')]
 
@@ -487,7 +487,7 @@ class StoreClustersToDatabase(CopyToTable):
     user = config['database']['user']
     password = None
 
-    columns = [('station_id', 'INT'),
+    columns = [('station_id', 'VARCHAR'),
                ('start', 'DATE'),
                ('stop', 'DATE'),
                ('cluster_id', 'INT')]
