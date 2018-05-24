@@ -546,7 +546,7 @@ class StoreCentroidsToDatabase(CopyToTable):
     @property
     def columns(self):
         if len(self.first_columns) == 3:
-            self.first_columns.extend([('h'+str(i), 'DOUBLE PRECISION')
+            self.first_columns.extend([('h{:02d}'.format(i), 'DOUBLE PRECISION')
                                       for i in range(24)])
         return self.first_columns
 
