@@ -6,6 +6,9 @@ port = 5432
 # you can write it if necessary
 password
 # table names
+stations = stations
+raw_stations = raw_stations
+timeseries = timeseries
 daily_transaction = daily_transaction
 clustering = cluster
 centroids = centroid

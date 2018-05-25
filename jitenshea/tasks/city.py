@@ -151,7 +151,7 @@ class ShapefileIntoDB(luigi.Task):
     """Dump a shapefile into a table
     """
     city = luigi.Parameter()
-    table = "raw_stations"
+    table = config['database']['raw_stations']
 
     @property
     def projection(self):
@@ -194,8 +194,8 @@ class NormalizeStationTable(PostgresQuery):
     user = config['database']['user']
     password = None
 
-    query = ("DROP TABLE IF EXISTS {schema}.stations; "
-             "CREATE TABLE {schema}.stations ("
+    query = ("DROP TABLE IF EXISTS {schema}.{tablename}; "
+             "CREATE TABLE {schema}.{tablename} ("
              "id varchar,"
              "name varchar(250),"
              "address varchar(500),"
@@ -203,17 +203,19 @@ class NormalizeStationTable(PostgresQuery):
              "nb_stations int,"
              "geom geometry(POINT, 4326)"
              "); "
-             "INSERT INTO {schema}.stations "
+             "INSERT INTO {schema}.{tablename} "
              "SELECT {id} AS id, {name} AS name, "
              "{address} AS address, {city} AS city, "
              "{nb_stations}::int AS nb_stations, "
              "st_transform(st_force2D(geom), 4326) as geom "
-             "FROM {schema}.raw_stations"
+             "FROM {schema}.{raw_tablename}"
              ";")
 
     @property
     def table(self):
-        return '{schema}.stations'.format(schema=self.city)
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config['database']['stations'])
 
     def requires(self):
         return ShapefileIntoDB(self.city)
@@ -222,6 +224,8 @@ class NormalizeStationTable(PostgresQuery):
         connection = self.output().connect()
         cursor = connection.cursor()
         sql = self.query.format(schema=self.city,
+                                tablename=self.table,
+                                raw_tablename=config['database']['raw_stations'],
                                 id=config[self.city]['feature_id'],
                                 name=config[self.city]['feature_name'],
                                 address=config[self.city]['feature_address'],
@@ -356,7 +360,9 @@ class AvailabilityToDB(CopyToTable):
 
     @property
     def table(self):
-        return '{schema}.timeseries'.format(schema=self.city)
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config['database']['timeseries'])
 
     def rows(self):
         """overload the rows method to skip the first line (header)
@@ -398,10 +404,11 @@ class AggregateTransaction(luigi.Task):
         return luigi.LocalTarget(self.path.format(year=year, month=month, day=day), format=UTF8)
 
     def run(self):
-        query = ("SELECT DISTINCT * FROM {schema}.timeseries "
+        query = ("SELECT DISTINCT * FROM {schema}.{tablename} "
                  "WHERE timestamp >= %(start)s AND timestamp < %(stop)s "
                  "ORDER BY timestamp, id"
-                 ";").format(schema=self.city)
+                 ";").format(schema=self.city,
+                             tablename=config['database']['timeseries'])
         eng = db()
         query_params = {"start": self.date,
                         "stop": self.date + timedelta(1)}
@@ -647,13 +654,14 @@ class TrainXGBoost(luigi.Task):
                  "available_bikes AS nb_bikes, available_stands AS nb_stands, "
                  "available_bikes::float / (available_bikes::float "
                  "+ available_stands::float) AS probability "
-                 "FROM {schema}.timeseries "
+                 "FROM {schema}.{tablename} "
                  "WHERE timestamp >= %(start)s "
                  "AND timestamp < %(stop)s "
                  "AND (available_bikes > 0 OR available_stands > 0) "
                  "AND (status = 'open')"
                  "ORDER BY id, timestamp"
-                 ";").format(schema=self.city)
+                 ";").format(schema=self.city,
+                             tablename=config['database']['timeseries'])
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
