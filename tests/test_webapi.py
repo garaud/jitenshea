@@ -6,6 +6,7 @@ import pytest
 from jitenshea.webapp import app
 from jitenshea.webapi import api, ISO_DATE
 
+
 app.config['TESTING'] = True
 api.init_app(app)
 
@@ -25,7 +26,7 @@ def test_app_index(client):
     assert resp.status_code == 200
 
 
-def test_api_city_route(client):
+def test_api_city_list(client):
     resp = client.get('/api/city')
     assert resp.status_code == 200
     content = json.loads(resp.data)
@@ -38,7 +39,7 @@ def test_api_city_route(client):
     assert expected == content['data']
 
 
-def test_api_city_stations_route(client):
+def test_api_city_stations(client):
     resp = client.get('/api/bordeaux/station', query_string={'limit': 10})
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -49,7 +50,7 @@ def test_api_city_stations_route(client):
     assert 5 == len(data['data'])
 
 
-def test_api_specific_stations_route(client):
+def test_api_specific_stations(client):
     resp = client.get('/api/bordeaux/station/93,35')
     assert resp.status_code == 200
     data = json.loads(resp.data)
@@ -57,7 +58,7 @@ def test_api_specific_stations_route(client):
     assert ['35', '93'] == [x['id'] for x in data['data']]
 
 
-def test_api_daily_transaction_route(client):
+def test_api_daily_transaction(client):
     date = yesterday().strftime(ISO_DATE)
     resp = client.get('/api/bordeaux/daily/station',
                       query_string={"limit": 10, "date": date, "by": "value"})
@@ -68,7 +69,7 @@ def test_api_daily_transaction_route(client):
     assert data[0]['value'][0] > data[1]['value'][0]
 
 
-def test_api_timeseries_route(client):
+def test_api_timeseries(client):
     start = yesterday().strftime(ISO_DATE)
     stop = date.today().strftime(ISO_DATE)
     resp = client.get('/api/bordeaux/timeseries/station/93,33',
@@ -76,7 +77,7 @@ def test_api_timeseries_route(client):
     assert resp.status_code == 200
 
 
-def test_api_hourly_profile_route(client):
+def test_api_hourly_profile(client):
     date = yesterday().strftime(ISO_DATE)
     resp = client.get('/api/bordeaux/profile/hourly/station/93,33',
                       query_string={'date': date,
@@ -84,15 +85,14 @@ def test_api_hourly_profile_route(client):
     assert resp.status_code == 200
 
 
-def test_api_daily_profile_route(client):
+def test_api_daily_profile(client):
     date = yesterday().strftime(ISO_DATE)
     resp = client.get('/api/bordeaux/profile/daily/station/93,33',
                       query_string={"date": date})
     assert resp.status_code == 200
 
 
-def test_api_clustering_station_route(client):
-    date = yesterday().strftime(ISO_DATE)
+def test_api_clustering_stations(client):
     resp = client.get('/api/bordeaux/clustering/stations')
     assert resp.status_code == 200
     data = json.loads(resp.data)['data']
@@ -100,8 +100,7 @@ def test_api_clustering_station_route(client):
     assert {0, 1, 2, 3} == set(x['cluster_id'] for x in data)
 
 
-def test_api_centroid_cluster(client):
-    date = yesterday().strftime(ISO_DATE)
+def test_api_clustering_centroids(client):
     resp = client.get('/api/bordeaux/clustering/centroids')
     assert resp.status_code == 200
     data = json.loads(resp.data)['data']
