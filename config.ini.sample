@@ -5,15 +5,16 @@ host = localhost
 port = 5432
 # you can write it if necessary
 password
+# table names
+daily_transaction = daily_transaction
+clustering = cluster
+centroids = centroid
 
 [lyon]
 schema = lyon
 table = timeserie
 srid = 4326
 typename = pvo_patrimoine_voirie.pvostationvelov
-daily_transaction = daily_transaction
-clustering = cluster
-centroids = centroid
 # station geoloc variable names
 feature_id = idstation
 feature_name = nom
@@ -32,9 +33,6 @@ schema = bordeaux
 table = timeserie
 srid = 4326
 typename = TB_STVEL_P
-daily_transaction = daily_transaction
-clustering = cluster
-centroids = centroid
 # station geoloc variable names
 feature_id = numstat
 feature_name = nom
