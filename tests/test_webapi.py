@@ -41,13 +41,20 @@ def test_api_city_route(client):
 def test_api_city_stations_route(client):
     resp = client.get('/api/bordeaux/station', query_string={'limit': 10})
     assert resp.status_code == 200
-    resp = client.get('/api/lyon/station', query_string={'limit': 10})
+    data = json.loads(resp.data)
+    assert 10 == len(data['data'])
+    resp = client.get('/api/lyon/station', query_string={'limit': 5})
     assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert 5 == len(data['data'])
 
 
 def test_api_specific_stations_route(client):
     resp = client.get('/api/bordeaux/station/93,35')
     assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert len(data['data']) == 2
+    assert ['35', '93'] == [x['id'] for x in data['data']]
 
 
 def test_api_daily_transaction_route(client):
@@ -55,6 +62,10 @@ def test_api_daily_transaction_route(client):
     resp = client.get('/api/bordeaux/daily/station',
                       query_string={"limit": 10, "date": date, "by": "value"})
     assert resp.status_code == 200
+    data = json.loads(resp.data)['data']
+    # order by value must return the first station transaction value higher than the
+    # second one.
+    assert data[0]['value'][0] > data[1]['value'][0]
 
 
 def test_api_timeseries_route(client):
@@ -73,7 +84,8 @@ def test_api_hourly_profile_route(client):
     assert resp.status_code == 200
 
 
-@pytest.mark.skip
 def test_api_daily_profile_route(client):
-    resp = client.get('/api/bordeaux/profile/daily/station/93,33')
+    date = yesterday().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/profile/daily/station/93,33',
+                      query_string={"date": date})
     assert resp.status_code == 200
