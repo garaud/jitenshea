@@ -338,7 +338,7 @@ def hourly_process(df):
     Return a DataFrame with the transactions sum & mean for each hour
     """
     df = df.copy().set_index('ts')
-    transaction = (df['available_bike']
+    transaction = (df['available_bikes']
                    .diff()
                    .abs()
                    .dropna()
@@ -346,7 +346,7 @@ def hourly_process(df):
                    .sum()
                    .reset_index())
     transaction['hour'] = transaction['ts'].apply(lambda x: x.hour)
-    return transaction.groupby('hour')['available_bike'].agg(['sum', 'mean'])
+    return transaction.groupby('hour')['available_bikes'].agg(['sum', 'mean'])
 
 
 def hourly_profile(city, station_ids, day, window):

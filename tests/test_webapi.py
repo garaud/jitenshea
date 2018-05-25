@@ -83,6 +83,9 @@ def test_api_hourly_profile(client):
                       query_string={'date': date,
                                     'window': 2})
     assert resp.status_code == 200
+    resp = client.get('/api/lyon/profile/hourly/station/1002',
+                      query_string={"date": date})
+    assert resp.status_code == 200
 
 
 def test_api_daily_profile(client):
