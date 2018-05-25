@@ -432,9 +432,8 @@ def get_station_ids(city):
     list of integers
         IDs of the shared-bike stations in the `city`
     """
-    table, idcol = station_city_table(city)
-    query = ("SELECT {id} FROM {schema}.{table}"
-             ";").format(id=idcol, schema=config[city]["schema"], table=table)
+    query = ("SELECT id FROM {schema}.stations"
+             ";").format(schema=config[city]["schema"])
     eng = db()
     rset = eng.execute(query).fetchall()
     if not rset:
@@ -457,28 +456,25 @@ def station_cluster_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
-    table, idname = station_city_table(city)
     return ("WITH ranked_clusters AS ("
             "SELECT cs.station_id AS id, "
             "cs.cluster_id, "
             "cs.start AS start, "
             "cs.stop AS stop, "
-            "citystation.nom AS nom, "
+            "citystation.name AS name, "
             "citystation.geom AS geom, "
             "rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.{cluster} AS cs "
-            "JOIN {schema}.{table} AS citystation "
-            "ON citystation.{idcol} = cs.station_id::varchar "
+            "JOIN {schema}.stations AS citystation "
+            "ON citystation.id = cs.station_id "
             "WHERE cs.station_id IN %(id_list)s) "
-            "SELECT id, cluster_id, start, stop, nom, "
-            "st_x(st_transform(geom, 4326)) as x, "
-            "st_y(st_transform(geom, 4326)) as y "
+            "SELECT id, cluster_id, start, stop, name, "
+            "st_x(geom) as x, "
+            "st_y(geom) as y "
             "FROM ranked_clusters "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
-                        cluster=config[city]['clustering'],
-                        table=table,
-                        idcol=idname)
+                        cluster=config['database']['clustering'])
 
 
 def station_clusters(city, station_ids=None, geojson=False):
@@ -535,13 +531,13 @@ def cluster_profile_query(city):
             "SELECT *, rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.{centroid}) "
             "SELECT cluster_id, "
-            "h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, "
+            "h00, h01, h02, h03, h04, h05, h06, h07, h08, h09, h10, h11, "
             "h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, "
             "start, stop "
             "FROM ranked_centroids "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
-                        centroid=config[city]['centroids'])
+                        centroid=config["database"]['centroids'])
 
 
 def cluster_profiles(city):
@@ -570,6 +566,6 @@ def cluster_profiles(city):
                        "start": cluster['start'],
                        'stop': cluster['stop'],
                        'hour': list(range(24)),
-                       'values': [cluster[h] for h in ["h{}".format(i) for i in range(24)]]}
+                       'values': [cluster[h] for h in ["h{:02d}".format(i) for i in range(24)]]}
         )
     return {"data": result}

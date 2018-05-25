@@ -89,3 +89,20 @@ def test_api_daily_profile_route(client):
     resp = client.get('/api/bordeaux/profile/daily/station/93,33',
                       query_string={"date": date})
     assert resp.status_code == 200
+
+
+def test_api_clustering_station_route(client):
+    date = yesterday().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/clustering/stations')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)['data']
+    # there are just 4 clusters
+    assert {0, 1, 2, 3} == set(x['cluster_id'] for x in data)
+
+
+def test_api_centroid_cluster(client):
+    date = yesterday().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/clustering/centroids')
+    assert resp.status_code == 200
+    data = json.loads(resp.data)['data']
+    assert {0, 1, 2, 3} == set(x['cluster_id'] for x in data)
