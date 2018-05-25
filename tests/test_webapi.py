@@ -1,0 +1,79 @@
+import json
+from datetime import date, timedelta
+
+import pytest
+
+from jitenshea.webapp import app
+from jitenshea.webapi import api, ISO_DATE
+
+app.config['TESTING'] = True
+api.init_app(app)
+
+
+def yesterday():
+    return date.today() - timedelta(1)
+
+
+@pytest.fixture
+def client():
+    client = app.test_client()
+    return client
+
+
+def test_app_index(client):
+    resp = client.get('/')
+    assert resp.status_code == 200
+
+
+def test_api_city_route(client):
+    resp = client.get('/api/city')
+    assert resp.status_code == 200
+    content = json.loads(resp.data)
+    expected = [{"city": "lyon",
+                 "country": "france",
+                 "stations": 348},
+                {"city": "bordeaux",
+                 "country": "france",
+                 "stations": 174}]
+    assert expected == content['data']
+
+
+def test_api_city_stations_route(client):
+    resp = client.get('/api/bordeaux/station', query_string={'limit': 10})
+    assert resp.status_code == 200
+    resp = client.get('/api/lyon/station', query_string={'limit': 10})
+    assert resp.status_code == 200
+
+
+def test_api_specific_stations_route(client):
+    resp = client.get('/api/bordeaux/station/93,35')
+    assert resp.status_code == 200
+
+
+def test_api_daily_transaction_route(client):
+    date = yesterday().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/daily/station',
+                      query_string={"limit": 10, "date": date, "by": "value"})
+    assert resp.status_code == 200
+
+
+def test_api_timeseries_route(client):
+    start = yesterday().strftime(ISO_DATE)
+    stop = date.today().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/timeseries/station/93,33',
+                      query_string={"start": start, "stop": stop})
+    assert resp.status_code == 200
+
+
+def test_api_hourly_profile_route(client):
+    date = yesterday().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/profile/hourly/station/93,33',
+                      query_string={'date': date,
+                                    'window': 2})
+    assert resp.status_code == 200
+
+
+@pytest.mark.skip
+def test_api_daily_profile_route(client):
+    resp = client.get('/api/bordeaux/profile/daily/station/93,33')
+    assert resp.status_code == 200
