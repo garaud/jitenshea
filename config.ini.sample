@@ -31,7 +31,7 @@ feature_status = status
 [bordeaux]
 schema = bordeaux
 table = timeserie
-srid = 4326
+srid = 2154
 typename = TB_STVEL_P
 # station geoloc variable names
 feature_id = numstat

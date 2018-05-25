@@ -195,11 +195,19 @@ class NormalizeStationTable(PostgresQuery):
     password = None
 
     query = ("DROP TABLE IF EXISTS {schema}.stations; "
-             "CREATE TABLE {schema}.stations"
-             " AS "
+             "CREATE TABLE {schema}.stations ("
+             "id varchar,"
+             "name varchar(250),"
+             "address varchar(500),"
+             "city varchar(100),"
+             "nb_stations int,"
+             "geom geometry(POINT, 4326)"
+             "); "
+             "INSERT INTO {schema}.stations "
              "SELECT {id} AS id, {name} AS name, "
              "{address} AS address, {city} AS city, "
-             "{nb_stations} AS nb_stations, geom "
+             "{nb_stations}::int AS nb_stations, "
+             "st_transform(st_force2D(geom), 4326) as geom "
              "FROM {schema}.raw_stations"
              ";")
 
