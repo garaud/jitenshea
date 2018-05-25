@@ -426,7 +426,9 @@ class TransactionsIntoDB(CopyToTable):
 
     @property
     def table(self):
-        return '{schema}.daily_transaction'.format(schema=self.city)
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config['database']['daily_transaction'])
 
     def rows(self):
         """overload the rows method to skip the first line (header) and add date value
@@ -496,7 +498,7 @@ class StoreClustersToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config[self.city]['clustering'])
+            tablename=config['database']['clustering'])
 
     def rows(self):
         inputpath = self.input().path
@@ -554,7 +556,7 @@ class StoreCentroidsToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config[self.city]['centroids'])
+            tablename=config['database']['centroids'])
 
     def rows(self):
         inputpath = self.input().path
