@@ -92,6 +92,7 @@ def time_window(day, window, backward):
         order_reference_date = start
     return TimeWindow(start, stop, order_reference_date)
 
+
 def station_geojson(stations):
     """Process station data into GeoJSON
     """
@@ -137,7 +138,7 @@ def clustered_station_geojson(stations):
              "properties": {
                  "id": data['id'],
                  "cluster_id": data['cluster_id'],
-                 "name": data['nom'],
+                 "name": data['name'],
                  "start": data['start'],
                  "stop": data['stop']
              }})
