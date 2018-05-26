@@ -476,13 +476,15 @@ class ComputeClusters(luigi.Task):
         query = ("SELECT id, timestamp, available_bikes "
                  "FROM {}.timeseries "
                  "WHERE timestamp >= %(start)s "
-                 "AND timestamp < %(stop)s;"
+                 "AND timestamp < %(stop)s "
+                 "AND status = 'open';"
                  "").format(self.city)
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
                                               "stop": self.stop})
         df.columns = ["station_id", "ts", "nb_bikes"]
+        print(df)
         clusters = compute_clusters(df)
         self.output().makedirs()
         path = self.output().path
