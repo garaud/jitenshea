@@ -5,19 +5,49 @@ host = localhost
 port = 5432
 # you can write it if necessary
 password
+# table names
+stations = stations
+raw_stations = raw_stations
+timeseries = timeseries
+daily_transaction = daily_transaction
+clustering = cluster
+centroids = centroid
 
 [lyon]
 schema = lyon
 table = timeserie
-daily_transaction = daily_transaction
-clustering = clustered_stations
-centroids = centroids
+srid = 4326
+typename = pvo_patrimoine_voirie.pvostationvelov
+# station geoloc variable names
+feature_id = idstation
+feature_name = nom
+feature_address = adresse1
+feature_city = commune
+feature_nb_stations = nbbornette
+# station availability variables names
+feature_avl_id = number
+feature_timestamp = last_update
+feature_avl_stands = available_bike_stands
+feature_avl_bikes = available_bikes
+feature_status = status
 
 [bordeaux]
 schema = bordeaux
 table = timeserie
-daily_transaction = daily_transaction
-clustering = clustered_stations
-centroids = centroids
+srid = 2154
+typename = TB_STVEL_P
+# station geoloc variable names
+feature_id = numstat
+feature_name = nom
+feature_address = adresse
+feature_city = commune
+feature_nb_stations = nbsuppor
+# station availability variables names
+feature_avl_id = ident
+feature_timestamp = heure
+feature_avl_stands = nbplaces
+feature_avl_bikes = nbvelos
+feature_status = etat
+
 # API Key
-key = QHUHHRI7HD
+key = CHANGME
