@@ -218,9 +218,11 @@ def _query_stations(city, limit=20):
       ,nb_stations as nb_bikes
       ,st_x(geom) as x
       ,st_y(geom) as y
-    FROM {schema}.stations
+    FROM {schema}.{table}
     LIMIT {limit}
-    """.format(schema=city, limit=limit)
+    """.format(schema=city,
+               table=config['database']['stations'],
+               limit=limit)
 
 
 def daily_query(city):
@@ -232,10 +234,12 @@ def daily_query(city):
            ,number AS value
            ,date
            ,name
-        FROM {schema}.daily_transaction AS X
-        LEFT JOIN {schema}.stations AS Y using(id)
+        FROM {schema}.{table} AS X
+        LEFT JOIN {schema}.{station} AS Y using(id)
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
-        ORDER BY id,date""".format(schema=city)
+        ORDER BY id,date""".format(schema=city,
+                                   table=config['database']['daily_transaction'],
+                                   station=config['database']['stations'])
 
 
 def daily_query_stations(city, limit, order_by='station'):
@@ -250,7 +254,7 @@ def daily_query_stations(city, limit, order_by='station'):
     return """WITH station AS (
             SELECT id
               ,row_number() over (partition by null order by {order_by}) AS rank
-            FROM {schema}.daily_transaction
+            FROM {schema}.{table}
             WHERE date = %(order_reference_date)s
             ORDER BY {order_by}
             LIMIT {limit}
@@ -260,10 +264,12 @@ def daily_query_stations(city, limit, order_by='station'):
           ,D.date
           ,Y.name
         FROM station AS S
-        LEFT JOIN {schema}.daily_transaction AS D ON (S.id=D.id)
-        LEFT JOIN {schema}.stations AS Y ON S.id=Y.id
+        LEFT JOIN {schema}.{table} AS D ON (S.id=D.id)
+        LEFT JOIN {schema}.{station} AS Y ON S.id=Y.id
         WHERE D.date >= %(start)s AND D.date <= %(stop)s
         ORDER BY S.rank,D.date;""".format(schema=config[city]['schema'],
+                                          table=config['database']['daily_transaction'],
+                                          station=config['database']['stations'],
                                           order_by=order_by,
                                           limit=limit)
 
@@ -319,11 +325,13 @@ def timeseries(city, station_ids, start, stop):
     """
     query = """SELECT T.*
       ,S.name as name
-    FROM {schema}.timeseries AS T
-    LEFT JOIN {schema}.stations AS S using(id)
+    FROM {schema}.{table} AS T
+    LEFT JOIN {schema}.{station} AS S using(id)
     WHERE id IN %(id_list)s AND timestamp >= %(start)s AND timestamp < %(stop)s
     ORDER BY id,timestamp
-    """.format(schema=config[city]['schema'])
+    """.format(schema=config[city]['schema'],
+               table=config['database']['timeseries'],
+               station=config['database']['stations'])
     eng = db()
     rset = eng.execute(query, id_list=tuple(x for x in station_ids),
                        start=start, stop=stop)
@@ -433,8 +441,9 @@ def get_station_ids(city):
     list of integers
         IDs of the shared-bike stations in the `city`
     """
-    query = ("SELECT id FROM {schema}.stations"
-             ";").format(schema=config[city]["schema"])
+    query = ("SELECT id FROM {schema}.{table}"
+             ";").format(schema=config[city]["schema"],
+                         table=config['database']['stations'])
     eng = db()
     rset = eng.execute(query).fetchall()
     if not rset:
@@ -466,7 +475,7 @@ def station_cluster_query(city):
             "citystation.geom AS geom, "
             "rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.{cluster} AS cs "
-            "JOIN {schema}.stations AS citystation "
+            "JOIN {schema}.{station} AS citystation "
             "ON citystation.id = cs.station_id "
             "WHERE cs.station_id IN %(id_list)s) "
             "SELECT id, cluster_id, start, stop, name, "
@@ -475,7 +484,8 @@ def station_cluster_query(city):
             "FROM ranked_clusters "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
-                        cluster=config['database']['clustering'])
+                        cluster=config['database']['clustering'],
+                        station=config['database']['stations'])
 
 
 def station_clusters(city, station_ids=None, geojson=False):
