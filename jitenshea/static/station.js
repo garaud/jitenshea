@@ -98,10 +98,10 @@ $(document).ready(function() {
     var station_name = content.data[0].name;
     var date = content.data[0].ts;
     var stands = date.map(function(t, i) {
-      return [Date.parse(t), content.data[0].available_stand[i]];
+      return [Date.parse(t), content.data[0].available_stands[i]];
     });
     var bikes = date.map(function(t, i) {
-      return [Date.parse(t), content.data[0].available_bike[i]];
+      return [Date.parse(t), content.data[0].available_bikes[i]];
     });
     Highcharts.stockChart('stationTimeseries', {
       // use to select the time window

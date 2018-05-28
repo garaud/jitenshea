@@ -56,3 +56,7 @@ PostgreSQL database with PostGIS. You must have the `shp2pgsql` command.
 See the `conda_env.sh` script to create a conda environment with the dependencies.
 
 **Note**: flask-restplus and daiquiri should be install via `pip`.
+
+## Tests
+
+Install the extras dependencies, e.g. `pip install -e ."[dev]"`, and run `pytest`.

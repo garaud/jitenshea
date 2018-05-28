@@ -48,6 +48,7 @@ def processing_daily_data(rset, window):
                        'name': group[0]['name']})
     return {"data": values}
 
+
 def processing_timeseries(rset):
     """Processing the result of a timeseries SQL query
 
@@ -61,9 +62,9 @@ def processing_timeseries(rset):
         group = list(group)
         values.append({'id': k,
                        'name': group[0]['name'],
-                       "ts": [x['ts'] for x in group],
-                       'available_bike': [x['available_bike'] for x in group],
-                       'available_stand': [x['available_stand'] for x in group]})
+                       "ts": [x['timestamp'] for x in group],
+                       'available_bikes': [x['available_bikes'] for x in group],
+                       'available_stands': [x['available_stands'] for x in group]})
     return {"data": values}
 
 
@@ -90,6 +91,7 @@ def time_window(day, window, backward):
         start, stop = stop, start
         order_reference_date = start
     return TimeWindow(start, stop, order_reference_date)
+
 
 def station_geojson(stations):
     """Process station data into GeoJSON
@@ -136,7 +138,7 @@ def clustered_station_geojson(stations):
              "properties": {
                  "id": data['id'],
                  "cluster_id": data['cluster_id'],
-                 "name": data['nom'],
+                 "name": data['name'],
                  "start": data['start'],
                  "stop": data['stop']
              }})
@@ -156,6 +158,7 @@ def cities():
                       'country': 'france',
                       'stations': 174}]}
 
+
 def stations(city, limit, geojson):
     """List of bicycle stations
 
@@ -165,12 +168,7 @@ def stations(city, limit, geojson):
 
     Return a list of dict, one dict by bicycle station
     """
-    if city == 'bordeaux':
-        query = bordeaux_stations(limit)
-    elif city == 'lyon':
-        query = lyon_stations(limit)
-    else:
-        raise ValueError("City {} not supported".format(city))
+    query = _query_stations(city, limit)
     eng = db()
     rset = eng.execute(query)
     keys = rset.keys()
@@ -180,84 +178,51 @@ def stations(city, limit, geojson):
     return {"data": result}
 
 
-def bordeaux_stations(limit=20):
-    """Query for the list of bicycle stations in Bordeaux
+def specific_stations(city, ids):
+    """List of specific bicycle stations.
 
-    limit: int
-       default 20
+    Parameters
+    ----------
+    city : string
+    ids : list
 
-    Return a SQL query to execute
+    Returns
+    -------
+    list of dict
+        One dict by bicycle station
     """
-    return """SELECT numstat::int AS id
-      ,nom AS name
-      ,adresse AS address
-      ,lower(commune) AS city
-      ,nbsuppor::int AS nb_bikes
-      ,st_x(st_transform(geom, 4326)) AS x
-      ,st_y(st_transform(geom, 4326)) AS y
-    FROM {schema}.vcub_station
-    LIMIT {limit}
-    """.format(schema=config['bordeaux']['schema'],
-               limit=limit)
-
-def lyon_stations(limit=20):
-    """Query for the list of bicycle stations in Lyon
-
-    limit: int
-       default 20
-
-    Return a SQL query to execute
-    """
-    return """SELECT idstation::int AS id
-      ,nom AS name
-      ,adresse1 AS address
-      ,lower(commune) AS city
-      ,nbbornette::int AS nb_bikes
-      ,st_x(geom) AS x
-      ,st_y(geom) AS y
-    FROM {schema}.pvostationvelov
-    LIMIT {limit}
-    """.format(schema=config['lyon']['schema'],
-               limit=limit)
-
-def bordeaux(station_ids):
-    """Get some specific bicycle-sharing stations for Bordeaux
-    station_id: list of int
-       Ids of the bicycle-sharing station
-
-    Return bicycle stations in a list of dict
-    """
-    query = bordeaux_stations(1).replace("LIMIT 1", 'WHERE numstat IN %(id_list)s')
+    query = _query_stations(city, 1).replace("LIMIT 1", 'WHERE id IN %(id_list)s')
     eng = db()
-    rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
+    rset = eng.execute(query, id_list=tuple(str(x) for x in ids)).fetchall()
     if not rset:
         return []
-    return {"data" : [dict(zip(x.keys(), x)) for x in rset]}
+    return {"data": [dict(zip(x.keys(), x)) for x in rset]}
 
-def lyon(station_ids):
-    """Get some specific bicycle-sharing stations for Lyon
-    station_id: list of ints
-       Ids of the bicycle-sharing stations
 
-    Return bicycle stations in a list of dict
+def _query_stations(city, limit=20):
+    """Query to get the list of bicycle stations
+
+    Parameters
+    ----------
+    city : str
+    limit : int
+
+    Returns
+    -------
+    str
     """
-    query = lyon_stations(1).replace("LIMIT 1", 'WHERE idstation IN %(id_list)s')
-    eng = db()
-    rset = eng.execute(query, id_list=tuple(str(x) for x in station_ids)).fetchall()
-    if not rset:
-        return []
-    return {"data" : [dict(zip(x.keys(), x)) for x in rset]}
-
-
-def station_city_table(city):
-    """Name table and ID column name
-    """
-    if city not in ('bordeaux', 'lyon'):
-        raise ValueError("City '{}' not supported.".format(city))
-    if city == 'bordeaux':
-        return 'vcub_station', 'numstat'
-    if city == 'lyon':
-        return 'pvostationvelov', 'idstation'
+    return """SELECT id
+      ,name
+      ,address
+      ,city
+      ,nb_stations as nb_bikes
+      ,st_x(geom) as x
+      ,st_y(geom) as y
+    FROM {schema}.{table}
+    LIMIT {limit}
+    """.format(schema=city,
+               table=config['database']['stations'],
+               limit=limit)
 
 
 def daily_query(city):
@@ -265,15 +230,17 @@ def daily_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
-    table, idcol = station_city_table(city)
     return """SELECT id
            ,number AS value
            ,date
-           ,Y.nom AS name
-        FROM {schema}.daily_transaction AS X
-        LEFT JOIN {schema}.{table} AS Y ON X.id=Y.{idcol}::int
+           ,name
+        FROM {schema}.{table} AS X
+        LEFT JOIN {schema}.{station} AS Y using(id)
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
-        ORDER BY id,date""".format(schema=config[city]['schema'], table=table, idcol=idcol)
+        ORDER BY id,date""".format(schema=city,
+                                   table=config['database']['daily_transaction'],
+                                   station=config['database']['stations'])
+
 
 def daily_query_stations(city, limit, order_by='station'):
     """SQL query to get daily transactions for all stations
@@ -284,11 +251,10 @@ def daily_query_stations(city, limit, order_by='station'):
         order_by = 'id'
     if order_by == 'value':
         order_by = 'number DESC'
-    table, idcol = station_city_table(city)
     return """WITH station AS (
             SELECT id
               ,row_number() over (partition by null order by {order_by}) AS rank
-            FROM {schema}.daily_transaction
+            FROM {schema}.{table}
             WHERE date = %(order_reference_date)s
             ORDER BY {order_by}
             LIMIT {limit}
@@ -296,14 +262,14 @@ def daily_query_stations(city, limit, order_by='station'):
         SELECT S.id
           ,D.number AS value
           ,D.date
-          ,Y.nom AS name
+          ,Y.name
         FROM station AS S
-        LEFT JOIN {schema}.daily_transaction AS D ON (S.id=D.id)
-        LEFT JOIN {schema}.{table} AS Y ON S.id=Y.{idcol}::int
+        LEFT JOIN {schema}.{table} AS D ON (S.id=D.id)
+        LEFT JOIN {schema}.{station} AS Y ON S.id=Y.id
         WHERE D.date >= %(start)s AND D.date <= %(stop)s
         ORDER BY S.rank,D.date;""".format(schema=config[city]['schema'],
-                                          table=table,
-                                          idcol=idcol,
+                                          table=config['database']['daily_transaction'],
+                                          station=config['database']['stations'],
                                           order_by=order_by,
                                           limit=limit)
 
@@ -353,17 +319,24 @@ def daily_transaction_list(city, day, limit, order_by, window=0, backward=True):
                        order_reference_date=window.order_reference_date).fetchall()
     return processing_daily_data(rset, window)
 
+
 def timeseries(city, station_ids, start, stop):
     """Get timeseries data between two dates for a specific city and a list of station ids
     """
-    query = """SELECT *
-    FROM {schema}.timeserie_norm
-    WHERE id IN %(id_list)s AND ts >= %(start)s AND ts < %(stop)s
-    """.format(schema=config[city]['schema'])
+    query = """SELECT T.*
+      ,S.name as name
+    FROM {schema}.{table} AS T
+    LEFT JOIN {schema}.{station} AS S using(id)
+    WHERE id IN %(id_list)s AND timestamp >= %(start)s AND timestamp < %(stop)s
+    ORDER BY id,timestamp
+    """.format(schema=config[city]['schema'],
+               table=config['database']['timeseries'],
+               station=config['database']['stations'])
     eng = db()
     rset = eng.execute(query, id_list=tuple(x for x in station_ids),
                        start=start, stop=stop)
     return processing_timeseries(rset)
+
 
 def hourly_process(df):
     """DataFrame with timeseries into a hourly transaction profile
@@ -374,7 +347,7 @@ def hourly_process(df):
     Return a DataFrame with the transactions sum & mean for each hour
     """
     df = df.copy().set_index('ts')
-    transaction = (df['available_bike']
+    transaction = (df['available_bikes']
                    .diff()
                    .abs()
                    .dropna()
@@ -382,7 +355,8 @@ def hourly_process(df):
                    .sum()
                    .reset_index())
     transaction['hour'] = transaction['ts'].apply(lambda x: x.hour)
-    return transaction.groupby('hour')['available_bike'].agg(['sum', 'mean'])
+    return transaction.groupby('hour')['available_bikes'].agg(['sum', 'mean'])
+
 
 def hourly_profile(city, station_ids, day, window):
     """Return the number of transaction per hour
@@ -425,6 +399,7 @@ def daily_profile_process(df):
     df['weekday'] = df['date'].apply(lambda x: x.weekday())
     return df.groupby('weekday')['value'].agg(['sum', 'mean'])
 
+
 def daily_profile(city, station_ids, day, window):
     """Return the number of transaction per day of week
 
@@ -466,9 +441,9 @@ def get_station_ids(city):
     list of integers
         IDs of the shared-bike stations in the `city`
     """
-    table, idcol = station_city_table(city)
-    query = ("SELECT {id} FROM {schema}.{table}"
-             ";").format(id=idcol, schema=config[city]["schema"], table=table)
+    query = ("SELECT id FROM {schema}.{table}"
+             ";").format(schema=config[city]["schema"],
+                         table=config['database']['stations'])
     eng = db()
     rset = eng.execute(query).fetchall()
     if not rset:
@@ -491,28 +466,26 @@ def station_cluster_query(city):
     """
     if city not in ('bordeaux', 'lyon'):
         raise ValueError("City '{}' not supported.".format(city))
-    table, idname = station_city_table(city)
     return ("WITH ranked_clusters AS ("
             "SELECT cs.station_id AS id, "
             "cs.cluster_id, "
             "cs.start AS start, "
             "cs.stop AS stop, "
-            "citystation.nom AS nom, "
+            "citystation.name AS name, "
             "citystation.geom AS geom, "
             "rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.{cluster} AS cs "
-            "JOIN {schema}.{table} AS citystation "
-            "ON citystation.{idcol} = cs.station_id::varchar "
+            "JOIN {schema}.{station} AS citystation "
+            "ON citystation.id = cs.station_id "
             "WHERE cs.station_id IN %(id_list)s) "
-            "SELECT id, cluster_id, start, stop, nom, "
-            "st_x(st_transform(geom, 4326)) as x, "
-            "st_y(st_transform(geom, 4326)) as y "
+            "SELECT id, cluster_id, start, stop, name, "
+            "st_x(geom) as x, "
+            "st_y(geom) as y "
             "FROM ranked_clusters "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
-                        cluster=config[city]['clustering'],
-                        table=table,
-                        idcol=idname)
+                        cluster=config['database']['clustering'],
+                        station=config['database']['stations'])
 
 
 def station_clusters(city, station_ids=None, geojson=False):
@@ -569,13 +542,13 @@ def cluster_profile_query(city):
             "SELECT *, rank() OVER (ORDER BY stop DESC) AS rank "
             "FROM {schema}.{centroid}) "
             "SELECT cluster_id, "
-            "h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, "
+            "h00, h01, h02, h03, h04, h05, h06, h07, h08, h09, h10, h11, "
             "h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, "
             "start, stop "
             "FROM ranked_centroids "
             "WHERE rank=1"
             ";").format(schema=config[city]['schema'],
-                        centroid=config[city]['centroids'])
+                        centroid=config["database"]['centroids'])
 
 
 def cluster_profiles(city):
@@ -604,6 +577,6 @@ def cluster_profiles(city):
                        "start": cluster['start'],
                        'stop': cluster['stop'],
                        'hour': list(range(24)),
-                       'values': [cluster[h] for h in ["h{}".format(i) for i in range(24)]]}
+                       'values': [cluster[h] for h in ["h{:02d}".format(i) for i in range(24)]]}
         )
     return {"data": result}

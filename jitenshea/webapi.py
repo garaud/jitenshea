@@ -170,10 +170,7 @@ class CityStation(Resource):
     @api.doc(description="Bicycle station(s)")
     def get(self, city, ids):
         check_city(city)
-        if city == 'bordeaux':
-            rset = controller.bordeaux(ids)
-        if city == 'lyon':
-            rset = controller.lyon(ids)
+        rset = controller.specific_stations(city, ids)
         if not rset:
             api.abort(404, "No such id: {}".format(ids))
         return jsonify(rset)
