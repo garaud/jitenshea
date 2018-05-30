@@ -31,7 +31,8 @@ from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-from jitenshea.stats import compute_clusters, train_prediction_model
+from jitenshea.stats import (compute_clusters, train_prediction_model,
+                             compute_geo_clusters)
 
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
@@ -485,6 +486,29 @@ class ComputeClusters(luigi.Task):
                                               "stop": self.stop})
         df.columns = ["station_id", "ts", "nb_bikes"]
         clusters = compute_clusters(df)
+        self.output().makedirs()
+        path = self.output().path
+        clusters['labels'].to_hdf(path, '/clusters')
+        clusters['centroids'].to_hdf(path, '/centroids')
+
+
+class ComputeClustersGeo(luigi.Task):
+    city = luigi.Parameter()
+
+    def output(self):
+        fname = 'kmeans-geo.h5'
+        fpath = os.path.join(DATADIR, self.city, 'clustering', fname)
+        return luigi.LocalTarget(fpath, format=MixedUnicodeBytes)
+
+    def run(self):
+        query = """SELECT id
+              ,st_x(geom) as lat
+              ,st_y(geom) as lon
+            FROM {schema}.{table};
+            """.format(schema=self.city,
+                       table=config['database']['stations'])
+        df = pd.io.sql.read_sql_query(query, db())
+        clusters = compute_geo_clusters(df)
         self.output().makedirs()
         path = self.output().path
         clusters['labels'].to_hdf(path, '/clusters')

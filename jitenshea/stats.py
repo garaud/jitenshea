@@ -7,7 +7,9 @@ import daiquiri
 
 import numpy as np
 import pandas as pd
+
 from sklearn.cluster import KMeans
+
 import xgboost as xgb
 
 import seaborn as sns
@@ -51,6 +53,7 @@ def preprocess_data_for_clustering(df):
     df['hour'] = df.index.hour
     df = df.groupby("hour").mean()
     return df / df.max()
+
 
 def compute_clusters(df):
     """Compute station clusters based on bike availability time series
@@ -138,6 +141,28 @@ def plot_cluster_profile(city, centroid, palette='tab10'):
     sns.despine()
 
 
+def compute_geo_clusters(df):
+    """Compute stations clusters based on their geolocalization
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+
+    Returns
+    ------
+    dict
+        labels: id station and their cluster id
+        centroids: cluster centroids
+    """
+    X = df[['lat', 'lon']].copy()
+    k_means = KMeans(init='k-means++', n_clusters=12).fit(X)
+    labels = pd.DataFrame({"station_id": df['id'],
+                           'cluster_id': k_means.labels_})
+    labels.sort_values(by='station_id', inplace=True)
+    centroids = pd.DataFrame(k_means.cluster_centers_, columns=['lat', 'lon'])
+    return {"labels": labels, "centroids": centroids}
+
+
 def time_resampling(df, freq="10T"):
     """Normalize the timeseries by resampling its timestamps
 
@@ -159,6 +184,7 @@ def time_resampling(df, freq="10T"):
           .mean()
           .bfill())
     return df.reset_index()
+
 
 def complete_data(df):
     """Add some temporal columns to the dataset
@@ -184,6 +210,7 @@ def complete_data(df):
     df['hour'] = df['ts'].apply(lambda x: x.hour)
     df['minute'] = df['ts'].apply(lambda x: x.minute)
     return df
+
 
 def add_future(df, frequency):
     """Add future bike availability to each observation by shifting input data
@@ -213,6 +240,7 @@ def add_future(df, frequency):
     df = df.merge(label, left_index=True, right_index=True)
     df.reset_index(level=1, inplace=True)
     return df
+
 
 def prepare_data_for_training(df, date, frequency='1H', start=None, periods=1):
     """Prepare data for training
@@ -253,6 +281,7 @@ def prepare_data_for_training(df, date, frequency='1H', start=None, periods=1):
     test_Y = test['future'].copy()
     return train_X, train_Y, test_X, test_Y
 
+
 def fit(train_X, train_Y, test_X, test_Y):
     """Train the xgboost model
 
@@ -286,6 +315,7 @@ def fit(train_X, train_Y, test_X, test_Y):
                     evals=watchlist,
                     evals_result=training_progress)
     return bst, training_progress
+
 
 def train_prediction_model(df, validation_date, frequency):
     """Train a XGBoost model on `df` data with a train/validation split given
