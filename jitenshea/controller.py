@@ -8,12 +8,13 @@ import daiquiri
 import logging
 
 from itertools import groupby
-from datetime import datetime, timedelta
+from datetime import timedelta
 from collections import namedtuple
 
 import pandas as pd
 
 from jitenshea import config
+from jitenshea.stats import find_cluster
 from jitenshea.iodb import db
 
 
@@ -567,16 +568,18 @@ def cluster_profiles(city):
     """
     query = cluster_profile_query(city)
     eng = db()
-    rset = eng.execute(query)
-    if not rset:
-        logger.warning("rset is empty")
+    df = pd.io.sql.read_sql_query(query, eng)
+    if df.empty:
+        logger.warning("df is empty")
         return {"data": []}
+    df = df.set_index('cluster_id')
+    labels = find_cluster(df)
     result = []
-    for cluster in (dict(zip(rset.keys(), row)) for row in rset):
-        result.append({"cluster_id": cluster['cluster_id'],
+    for cluster_id, cluster in df.iterrows():
+        result.append({"cluster_id": cluster_id,
+                       'label': labels[cluster_id],
                        "start": cluster['start'],
                        'stop': cluster['stop'],
                        'hour': list(range(24)),
-                       'values': [cluster[h] for h in ["h{:02d}".format(i) for i in range(24)]]}
-        )
+                       'values': [cluster[h] for h in ["h{:02d}".format(i) for i in range(24)]]})
     return {"data": result}

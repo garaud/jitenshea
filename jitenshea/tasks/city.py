@@ -474,10 +474,11 @@ class ComputeClusters(luigi.Task):
 
     def run(self):
         query = ("SELECT id, timestamp, available_bikes "
-                 "FROM {}.timeseries "
+                 "FROM {schema}.{table} "
                  "WHERE timestamp >= %(start)s "
                  "AND timestamp < %(stop)s;"
-                 "").format(self.city)
+                 "").format(schema=self.city,
+                            table=config['database']['timeseries'])
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,

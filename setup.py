@@ -19,7 +19,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
-    extras_require={'dev': ['pytest', 'pytest-sugar', 'ipython', 'ipdb']},
+    extras_require={'dev': ['pytest', 'pytest-sugar', 'ipython', 'ipdb', 'seaborn']},
 
     author="Damien Garaud",
     author_email='damien.garaud@gmail.com',
