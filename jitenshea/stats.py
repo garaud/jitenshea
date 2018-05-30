@@ -10,10 +10,13 @@ import pandas as pd
 from sklearn.cluster import KMeans
 import xgboost as xgb
 
-from jitenshea import config
+import seaborn as sns
+from matplotlib import pyplot as plt
+
 
 daiquiri.setup(logging.INFO)
 logger = daiquiri.getLogger("stats")
+
 
 def preprocess_data_for_clustering(df):
     """Prepare data in order to apply a clustering algorithm
@@ -71,6 +74,69 @@ def compute_clusters(df):
     df_labels = pd.DataFrame({"id_station": df_norm.columns, "labels": kmeans.labels_})
     df_centroids = pd.DataFrame(kmeans.cluster_centers_).reset_index()
     return {"labels": df_labels, "centroids": df_centroids}
+
+
+def find_cluster(centroid):
+    """Identify the different clusters with their trends.
+
+    Parameters
+    ----------
+    centroid: pd.DataFrame
+        Hourly profile for each cluster
+
+    Returns
+    -------
+    dict
+        name: cluster_id
+    """
+    # There must be just 4 clusters
+    assert centroid.shape[0] == 4
+    hours = ['h{:02d}'.format(i) for i in range(24)]
+    centroid = centroid[hours].T * 100.
+    # the cluster which has an almost-always high availability
+    high_avail = centroid.std().idxmin()
+    centroid = centroid.drop(columns=[high_avail])
+    # the cluster where the availability increases through the evening
+    evening = (centroid.loc['h21'] - centroid.loc['h04']).idxmax()
+    centroid = centroid.drop(columns=[evening])
+    # the cluster where the availability is min at the morning (and max at noon)
+    noon = centroid.loc['h06'].idxmin()
+    centroid = centroid.drop(columns=[noon])
+    # the last one, where the availability is max at the morning.
+    morning = centroid.columns[0]
+    return {high_avail: "high",
+            evening: "evening",
+            noon: "noon",
+            morning: "morning"}
+
+
+def plot_cluster_profile(city, centroid, palette='tab10'):
+    """Plot the profiles for each cluster.
+
+    Parameters
+    ----------
+    city : str
+        city name
+    centroid : pd.DataFrame
+        cluster profiles
+    palette : str
+        color palette name
+    """
+    colors = sns.color_palette(palette, 4)
+    hours = ['h{:02d}'.format(i) for i in range(24)]
+    centroid = centroid.set_index('cluster_id')
+    with sns.axes_style("whitegrid", {'xtick.major.size': 8.0}):
+        fig, ax = plt.subplots(figsize=(10, 6))
+    for (cluster_id, label), color in zip(find_cluster(centroid).items(), colors):
+        plt.plot(range(24), 100*centroid[hours].T[cluster_id], color=color, label=label)
+    plt.legend()
+    plt.title("{} Cluster".format(city.capitalize()))
+    plt.xlabel('Hour')
+    plt.xticks(np.linspace(0, 24, 13))
+    plt.yticks(np.linspace(0, 100, 11))
+    plt.ylabel("available bikes%")
+    sns.despine()
+
 
 def time_resampling(df, freq="10T"):
     """Normalize the timeseries by resampling its timestamps
