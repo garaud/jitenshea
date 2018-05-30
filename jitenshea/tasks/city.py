@@ -627,6 +627,68 @@ class StoreCentroidsToDatabase(CopyToTable):
             connection.cursor().execute(query)
 
 
+class StoreGeoClustersToDatabase(CopyToTable):
+    """Read the cluster labels from `DATADIR/<city>/kmeans-geo.h5` file and store
+    them into a dedicated tablename.
+    """
+    city = luigi.Parameter()
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    columns = [('station_id', 'VARCHAR PRIMARY KEY'),
+               ('cluster_id', 'INT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename='geo_' + config['database']['clustering'])
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, '/clusters')
+        for _, row in clusters[['station_id', 'cluster_id']].iterrows():
+            yield row.values
+
+    def requires(self):
+        return ComputeClustersGeo(self.city)
+
+
+class StoreGeoCentroidsToDatabase(CopyToTable):
+    """Read the cluster centroids from `DATADIR/<city>/kmeans-geo.h5` file and
+    store them into a dedicated table.
+    """
+    city = luigi.Parameter()
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    columns = [('cluster_id', 'INT PRIMARY KEY'),
+               ('lat', 'FLOAT'),
+               ('lon', 'FLOAT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename='geo_' + config['database']['centroids'])
+
+    def rows(self):
+        inputpath = self.input().path
+        df = pd.read_hdf(inputpath, '/centroids')
+        for cluster_id, row in df.iterrows():
+            row = row.values.tolist()
+            row.insert(0, cluster_id)
+            yield row
+
+    def requires(self):
+        return ComputeClustersGeo(self.city)
+
+
 class Clustering(luigi.Task):
     """Clustering master task
 
@@ -638,6 +700,17 @@ class Clustering(luigi.Task):
     def requires(self):
         yield StoreClustersToDatabase(self.city, self.start, self.stop)
         yield StoreCentroidsToDatabase(self.city, self.start, self.stop)
+
+
+class ClusteringGeo(luigi.Task):
+    """Mmaster task for geoloc clustering
+
+    """
+    city = luigi.Parameter()
+
+    def requires(self):
+        yield StoreGeoClustersToDatabase(self.city)
+        yield StoreGeoCentroidsToDatabase(self.city)
 
 
 class TrainXGBoost(luigi.Task):
