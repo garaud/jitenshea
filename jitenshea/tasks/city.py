@@ -298,7 +298,7 @@ class AvailabilityToCSV(luigi.Task):
                             '{month:02d}', '{day:02d}', '{ts}.csv')
 
     def requires(self):
-        return BikeAvailability(self.city)
+        return BikeAvailability(self.city, self.timestamp)
 
     def output(self):
         triple = lambda x: (x.year, x.month, x.day)
