@@ -3,12 +3,14 @@
 Supported cities:
 
 * Bordeaux
-  - stations URL: https://data.bordeaux-metropole.fr/files.php?gid=43&format=2
-  - real-time bike availability URL: https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&typename=CI_VCUB_P
+
+  + stations URL: https://data.bordeaux-metropole.fr/files.php?gid=43&format=2
+  + real-time bike availability URL: https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&typename=CI_VCUB_P
 
 * Lyon
-  - stations URL: https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov
-  - real-time bike availability URL: https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json
+
+  + stations URL: https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov
+  + real-time bike availability URL: https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json
 """
 
 import os

@@ -49,6 +49,8 @@ extensions = [
 # Set autodoc member order by source instead of by alphabetical order
 autodoc_member_order = 'bysource'
 
+autodoc_mock_imports = ["sh", "xgboost", "sqlalchemy", "luigi"]
+
 # Get rid of autosummary properties when using autoclass
 numpydoc_show_class_members = False
 
