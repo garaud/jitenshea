@@ -3,7 +3,8 @@
 ----------
 
 -- daily_transaction table --
---OK
+-- id: INT -> VARCHAR
+ALTER TABLE lyon.daily_transactions ALTER COLUMN id TYPE VARCHAR;
 
 -- timeserie table --
 -- number -> id
@@ -29,8 +30,12 @@ UPDATE lyon.timeserie SET status = 'closed' WHERE status = 'CLOSED';
 -- cluster table --
 -- station_id: INT -> VARCHAR
 ALTER TABLE lyon.clustering ALTER COLUMN station_id TYPE VARCHAR;
+ALTER TABLE lyon.clustering ALTER COLUMN cluster_id TYPE VARCHAR;
 
 -- centroid table --
+-- station_id: INT -> VARCHAR
+ALTER TABLE lyon.centroid ALTER COLUMN cluster_id TYPE VARCHAR;
+
 -- hX -> h0X
 ALTER TABLE lyon.centroid RENAME COLUMN h0 TO h00;
 ALTER TABLE lyon.centroid RENAME COLUMN h1 TO h01;
@@ -48,7 +53,8 @@ ALTER TABLE lyon.centroid RENAME COLUMN h9 TO h09;
 --------------
 
 -- daily_transaction table --
---OK
+-- id: INT -> VARCHAR
+ALTER TABLE bordeaux.daily_transactions ALTER COLUMN id TYPE VARCHAR;
 
 -- timeserie table --
 -- number -> id
@@ -77,8 +83,12 @@ UPDATE bordeaux.timeserie SET status = 'closed' WHERE status = 'DECONNECTEE';
 -- cluster table --
 -- station_id: INT -> VARCHAR
 ALTER TABLE bordeaux.clustering ALTER COLUMN station_id TYPE VARCHAR;
+ALTER TABLE bordeaux.clustering ALTER COLUMN cluster_id TYPE VARCHAR;
 
 -- centroid table --
+-- station_id: INT -> VARCHAR
+ALTER TABLE bordeaux.centroid ALTER COLUMN cluster_id TYPE VARCHAR;
+
 -- hX -> h0X
 ALTER TABLE bordeaux.centroid RENAME COLUMN h0 TO h00;
 ALTER TABLE bordeaux.centroid RENAME COLUMN h1 TO h01;
