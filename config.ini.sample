@@ -6,6 +6,7 @@ port = 5432
 # you can write it if necessary
 password
 
+
 [lyon]
 schema = lyon
 srid = 4326

@@ -835,3 +835,55 @@ class PredictBikeAvailability(luigi.Task):
                                                 self.frequency.replace('T', 'm'))
         with self.output().open('w') as fobj:
             predictions.reset_index().to_csv(fobj, index=False)
+
+
+class StorePredictionToDatabase(CopyToTable):
+    """Read the XGBoost predictions from `DATADIR/<city>/xgboost-model/.h5` file and
+    store them into `predictions` table
+
+    """
+    city = luigi.Parameter()
+    train_start = luigi.DateParameter()
+    train_stop = luigi.DateParameter()
+    train_cut = luigi.DateMinuteParameter()
+    predict_start = luigi.DateMinuteParameter(default=None, interval=5)
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+    frequency = luigi.Parameter(default="30T")
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    columns = [('timestamp', 'TIMESTAMP'),
+               ('frequency', 'VARCHAR'),
+               ('station_id', 'VARCHAR'),
+               ('availability', 'NUMERIC'),
+               ('nb_bikes', 'INT'),
+               ('nb_stands', 'INT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename=config['database']['predictions'])
+
+    @property
+    def start(self):
+        if self.predict_start is None:
+            return self.timestamp - pd.Timedelta('5m')
+        else:
+            return self.predict_start
+
+    def requires(self):
+        return PredictBikeAvailability(self.city, self.train_start,
+                                       self.train_stop, self.train_cut,
+                                       self.start, self.timestamp,
+                                       self.frequency)
+
+    def rows(self):
+        inputpath = self.input().path
+        predictions = pd.read_csv(inputpath)
+        for _, row in predictions.iterrows():
+            modified_row = list(row.values)
+            modified_row.insert(1, self.frequency)
+            yield modified_row
