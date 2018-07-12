@@ -320,13 +320,13 @@ class AvailabilityToCSV(luigi.Task):
                 df = pd.DataFrame([dict(x) for x in data])
                 status_key = config[self.city]['feature_status']
                 df[status_key] = df[status_key].apply(
-                    lambda x: 'open' if x == 'CONNECTEE' else 'close')
+                    lambda x: 'open' if x == 'CONNECTEE' else 'closed')
             elif self.city == 'lyon':
                 data = json.load(fobj)
                 df = pd.DataFrame(data['values'], columns=data['fields'])
                 status_key = config[self.city]['feature_status']
                 df[status_key] = df[status_key].apply(
-                    lambda x: 'open' if x == 'OPEN' else 'close')
+                    lambda x: 'open' if x == 'OPEN' else 'closed')
             else:
                 raise ValueError(("{} is an unknown city.".format(self.city)))
         df = df[[config[self.city]['feature_avl_id'],
