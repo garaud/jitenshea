@@ -31,7 +31,8 @@ from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
-from jitenshea.stats import compute_clusters, train_prediction_model
+from jitenshea.stats import (compute_clusters, train_prediction_model,
+                             compute_geo_clusters)
 
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
@@ -491,6 +492,29 @@ class ComputeClusters(luigi.Task):
         clusters['centroids'].to_hdf(path, '/centroids')
 
 
+class ComputeClustersGeo(luigi.Task):
+    city = luigi.Parameter()
+
+    def output(self):
+        fname = 'kmeans-geo.h5'
+        fpath = os.path.join(DATADIR, self.city, 'clustering', fname)
+        return luigi.LocalTarget(fpath, format=MixedUnicodeBytes)
+
+    def run(self):
+        query = """SELECT id
+              ,st_x(geom) as lat
+              ,st_y(geom) as lon
+            FROM {schema}.{table};
+            """.format(schema=self.city,
+                       table=config['database']['stations'])
+        df = pd.io.sql.read_sql_query(query, db())
+        clusters = compute_geo_clusters(df)
+        self.output().makedirs()
+        path = self.output().path
+        clusters['labels'].to_hdf(path, '/clusters')
+        clusters['centroids'].to_hdf(path, '/centroids')
+
+
 class StoreClustersToDatabase(CopyToTable):
     """Read the cluster labels from `DATADIR/<city>/clustering.h5` file and store
     them into `clustered_stations`
@@ -603,6 +627,68 @@ class StoreCentroidsToDatabase(CopyToTable):
             connection.cursor().execute(query)
 
 
+class StoreGeoClustersToDatabase(CopyToTable):
+    """Read the cluster labels from `DATADIR/<city>/kmeans-geo.h5` file and store
+    them into a dedicated tablename.
+    """
+    city = luigi.Parameter()
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+
+    columns = [('station_id', 'VARCHAR PRIMARY KEY'),
+               ('cluster_id', 'INT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename='geo_' + config['database']['clustering'])
+
+    def rows(self):
+        inputpath = self.input().path
+        clusters = pd.read_hdf(inputpath, '/clusters')
+        for _, row in clusters[['station_id', 'cluster_id']].iterrows():
+            yield row.values
+
+    def requires(self):
+        return ComputeClustersGeo(self.city)
+
+
+class StoreGeoCentroidsToDatabase(CopyToTable):
+    """Read the cluster centroids from `DATADIR/<city>/kmeans-geo.h5` file and
+    store them into a dedicated table.
+    """
+    city = luigi.Parameter()
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    columns = [('cluster_id', 'INT PRIMARY KEY'),
+               ('lat', 'FLOAT'),
+               ('lon', 'FLOAT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename='geo_' + config['database']['centroids'])
+
+    def rows(self):
+        inputpath = self.input().path
+        df = pd.read_hdf(inputpath, '/centroids')
+        for cluster_id, row in df.iterrows():
+            row = row.values.tolist()
+            row.insert(0, cluster_id)
+            yield row
+
+    def requires(self):
+        return ComputeClustersGeo(self.city)
+
+
 class Clustering(luigi.Task):
     """Clustering master task
 
@@ -614,6 +700,17 @@ class Clustering(luigi.Task):
     def requires(self):
         yield StoreClustersToDatabase(self.city, self.start, self.stop)
         yield StoreCentroidsToDatabase(self.city, self.start, self.stop)
+
+
+class ClusteringGeo(luigi.Task):
+    """Mmaster task for geoloc clustering
+
+    """
+    city = luigi.Parameter()
+
+    def requires(self):
+        yield StoreGeoClustersToDatabase(self.city)
+        yield StoreGeoCentroidsToDatabase(self.city)
 
 
 class TrainXGBoost(luigi.Task):
