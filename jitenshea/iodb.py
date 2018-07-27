@@ -18,8 +18,8 @@ def psql_args():
     """Return the arguments for the command psql with some db parameters: host,
     database, user, (pwd,) port
 
-    Return
-    ------
+    Returns
+    -------
     a list of str
     """
     psql = ['-h', config['database']['host'], '-d', config['database']['dbname'], '-U',
@@ -42,8 +42,8 @@ def shp2pgsql_args(projection, filename, tablename, encoding=None):
     encoding : str
         (default None)
 
-    Return
-    ------
+    Returns
+    -------
     a list of str
     """
     logger.info("commands line for shp2pgsql with the file '%s'", filename)
@@ -59,8 +59,8 @@ def db():
     """Create a SQLAlchemy engine with Postgres connection parameters contained
     in config.ini file
 
-    Return
-    ------
+    Returns
+    -------
     SQLAlchemy engine
     """
     database = config['database']
