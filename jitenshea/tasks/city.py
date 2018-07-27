@@ -508,7 +508,7 @@ class StoreClustersToDatabase(CopyToTable):
     columns = [('station_id', 'VARCHAR'),
                ('start', 'DATE'),
                ('stop', 'DATE'),
-               ('cluster_id', 'INT')]
+               ('cluster_id', 'VARCHAR')]
 
     @property
     def table(self):
@@ -557,7 +557,7 @@ class StoreCentroidsToDatabase(CopyToTable):
     database = config['database']['dbname']
     user = config['database']['user']
     password = None
-    first_columns = [('cluster_id', 'INT'),
+    first_columns = [('cluster_id', 'VARCHAR'),
                      ('start', 'DATE'),
                      ('stop', 'DATE')]
 
