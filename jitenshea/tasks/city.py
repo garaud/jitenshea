@@ -760,6 +760,7 @@ class TrainXGBoost(luigi.Task):
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
                                               "stop": self.stop})
+        df.station_id = df.station_id.astype(int)
         if df.empty:
             raise Exception("There is not any data to process in the DataFrame. "
                             + "Please check the dates.")
@@ -826,6 +827,7 @@ class PredictBikeAvailability(luigi.Task):
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
                                               "stop": self.stop})
+        df.station_id = df.station_id.astype(int)
         if df.empty:
             raise Exception("There is not any data to process in the "
                             + "prediction DataFrame. Please check the dates.")
