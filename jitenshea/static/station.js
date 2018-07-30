@@ -86,6 +86,7 @@ $(document).ready(function() {
   // Only plot seven days.
   var stop = new Date();
   var start = new Date(stop);
+  stop.setDate(stop.getDate() + 1);
   start.setDate(start.getDate() - 7);
 
   start = start.toISOString().substring(0, 10);
@@ -144,6 +145,9 @@ $(document).ready(function() {
       },
       xAxis: {
         type: "datetime"
+      },
+      time: {
+	useUTC: false
       },
       series: [{
         name: "stands",
