@@ -218,7 +218,14 @@ class CityTimeseriesStation(Resource):
         rset = controller.timeseries(city, ids, start, stop)
         if not rset:
             api.abort(404, "No such data for id: {} between {} and {}".format(ids, start, stop))
-        return jsonify(rset)
+        prediction_set = controller.predictions(city, ids, start, stop)
+        if not prediction_set:
+            api.abort(404, "No such prediction data for id: {} between {} and {}".format(ids, start, stop))
+        combined_set = {}
+        combined_set['timeseries'] = rset['data']
+        combined_set['predictions'] = prediction_set['data']
+        return jsonify(combined_set)
+
 
 @api.route("/<string:city>/profile/hourly/station/<list:ids>")
 class CityHourlyStation(Resource):
@@ -233,6 +240,7 @@ class CityHourlyStation(Resource):
         if not rset:
             api.abort(404, "No such data for id: {} for {}".format(ids, day))
         return jsonify(rset)
+
 
 @api.route("/<string:city>/profile/daily/station/<list:ids>")
 class CityDailyStation(Resource):
