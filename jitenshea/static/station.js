@@ -126,15 +126,20 @@ $(document).ready(function() {
           count: 1,
           text: 'All'
         }],
-             selected: 0,
+        selected: 0,
         inputEnabled: false
+      },
+      legend:{
+	align: 'center',
+	verticalAlign: 'top',
+	enabled: true
       },
       title: {
         text: 'Timeseries for the station ' + station_name
       },
       yAxis: {
         title: {
-          text: 'Available bikes and stands'
+          text: 'Number of items'
         }
       },
       xAxis: {
