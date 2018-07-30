@@ -66,6 +66,33 @@ def processing_timeseries(rset):
     return {"data": values}
 
 
+def processing_predictions(rset):
+    """Processing the result of a prediction SQL query
+
+    Parameters
+    ----------
+    rset : sqlalchemy.engine.result.ResultProxy
+        Output of a prediction SQL query
+
+    Returns
+    -------
+    list of dicts
+        Bike and stand prediction for a given time period
+    """
+    if not rset:
+        return []
+    data = [dict(zip(x.keys(), x)) for x in rset]
+    values = []
+    for k, group in groupby(data, lambda x: x['id']):
+        group = list(group)
+        values.append({'id': k,
+                       'name': group[0]['name'],
+                       "ts": [x['timestamp'] for x in group],
+                       'predicted_bikes': [x['pred_nb_bikes'] for x in group],
+                       'predicted_stands': [x['pred_nb_stands'] for x in group]})
+    return {"data": values}
+
+
 def time_window(day, window, backward):
     """Return a TimeWindow
 
@@ -334,6 +361,41 @@ def timeseries(city, station_ids, start, stop):
     rset = eng.execute(query, id_list=tuple(x for x in station_ids),
                        start=start, stop=stop)
     return processing_timeseries(rset)
+
+
+def predictions(city, station_ids, start, stop):
+    """Get bike availability predictions between `start` and `stop` dates for
+    `city` at stations `station_ids`
+
+    Parameters
+    ----------
+    city : str
+        City of interest
+    station_ids : list of ints
+        Ids of the stations that are considered
+    start : datetime
+        Begin of prediction period
+    stop : datetime
+        End of prediction period
+    """
+    query = ("SELECT T.station_id AS id, "
+             "T.timestamp AS timestamp, "
+             "T.pred_nb_bikes AS pred_nb_bikes, "
+             "T.pred_nb_stands AS pred_nb_stands, "
+             "S.name AS name "
+             "FROM {schema}.{table} AS T "
+             "LEFT JOIN {schema}.{station} AS S "
+             "ON (T.station_id::varchar = S.id::varchar) "
+             "WHERE id IN %(id_list)s "
+             "AND timestamp >= %(start)s AND timestamp < %(stop)s "
+             "ORDER BY id,timestamp"
+             ";").format(schema=city,
+                         table='prediction',
+                         station='station')
+    eng = db()
+    rset = eng.execute(query, id_list=tuple(x for x in station_ids),
+                       start=start, stop=stop)
+    return processing_predictions(rset)
 
 
 def hourly_process(df):
