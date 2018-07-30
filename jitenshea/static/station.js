@@ -87,21 +87,28 @@ $(document).ready(function() {
   var stop = new Date();
   var start = new Date(stop);
   start.setDate(start.getDate() - 7);
+
   start = start.toISOString().substring(0, 10);
   stop = stop.toISOString().substring(0, 10);
-  // console.log("start: "+ start);
-  // console.log("stop: " + stop);
-  var url = cityurl("stationTimeseries") + "/timeseries/station/" + station_id
+
+  var url = cityurl("stationTimeseries")
+      + "/timeseries/station/" + station_id
       + "?start=" + start + "&stop=" + stop;
   $.get(url, function(content) {
-    console.log(content);
-    var station_name = content.data[0].name;
-    var date = content.data[0].ts;
+    var station_name = content.timeseries[0].name;
+    var date = content.timeseries[0].ts;
+    var prediction_date = content.predictions[0].ts;
     var stands = date.map(function(t, i) {
-      return [Date.parse(t), content.data[0].available_stands[i]];
+      return [Date.parse(t), content.timeseries[0].available_stands[i]];
     });
     var bikes = date.map(function(t, i) {
-      return [Date.parse(t), content.data[0].available_bikes[i]];
+      return [Date.parse(t), content.timeseries[0].available_bikes[i]];
+    });
+    var predicted_stands = prediction_date.map(function(t, i) {
+      return [Date.parse(t), content.predictions[0].predicted_stands[i]];
+    });
+    var predicted_bikes = prediction_date.map(function(t, i) {
+      return [Date.parse(t), content.predictions[0].predicted_bikes[i]];
     });
     Highcharts.stockChart('stationTimeseries', {
       // use to select the time window
@@ -145,9 +152,24 @@ $(document).ready(function() {
         tooltip: {
           valueDecimals: 1
         }
+      }, {
+        name: "predicted stands",
+        data: predicted_stands,
+        tooltip: {
+          valueDecimals: 1
+        }
+      }, {
+        name: "predicted bikes",
+        data: predicted_bikes,
+        tooltip: {
+          valueDecimals: 1
+        }
       }]
     } );
+
+
   } );
+
 } );
 
 
@@ -161,6 +183,7 @@ $(document).ready(function() {
   var url = cityurl("stationDailyTransactions") + "/daily/station/" + station_id
       + "?date=" + day + "&window=" + window;
   $.get(url, function(content) {
+
     var station_name = content.data[0].name;
     var date = content.data[0].date;
     var data = date.map(function(t, i) {
