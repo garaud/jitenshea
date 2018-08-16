@@ -822,7 +822,7 @@ class PredictBikeAvailability(luigi.Task):
                  "AND (status = 'open')"
                  "ORDER BY id, timestamp"
                  ";").format(schema=self.city,
-                             tablename=config['database']['timeseries'])
+                             tablename='timeseries')
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
@@ -867,7 +867,7 @@ class StorePredictionToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config['database']['predictions'])
+            tablename='prediction')
 
     @property
     def start(self):
