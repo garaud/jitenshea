@@ -4,7 +4,7 @@
 
 -- daily_transaction table --
 -- id: INT -> VARCHAR
-ALTER TABLE lyon.daily_transactions ALTER COLUMN id TYPE VARCHAR;
+ALTER TABLE lyon.daily_transaction ALTER COLUMN id TYPE VARCHAR;
 
 -- timeserie table --
 -- number -> id
@@ -22,6 +22,9 @@ ALTER TABLE lyon.timeserie DROP COLUMN IF EXISTS bonus;
 
 -- id: INT -> VARCHAR
 ALTER TABLE lyon.timeserie ALTER COLUMN id TYPE VARCHAR;
+
+-- timeserie*s*
+ALTER TABLE lyon.timeserie RENAME TO timeseries;
 
 -- status column refactoring (value replacement)
 UPDATE lyon.timeserie SET status = 'open' WHERE status = 'OPEN';
@@ -54,7 +57,7 @@ ALTER TABLE lyon.centroid RENAME COLUMN h9 TO h09;
 
 -- daily_transaction table --
 -- id: INT -> VARCHAR
-ALTER TABLE bordeaux.daily_transactions ALTER COLUMN id TYPE VARCHAR;
+ALTER TABLE bordeaux.daily_transaction ALTER COLUMN id TYPE VARCHAR;
 
 -- timeserie table --
 -- ident -> id
@@ -79,6 +82,9 @@ ALTER TABLE bordeaux.timeserie ALTER COLUMN id TYPE VARCHAR;
 -- status column refactoring (value replacements)
 UPDATE bordeaux.timeserie SET status = 'open' WHERE status = 'CONNECTEE';
 UPDATE bordeaux.timeserie SET status = 'closed' WHERE status = 'DECONNECTEE';
+
+-- timeserie*s*
+ALTER TABLE bordeaux.timeserie RENAME TO timeseries;
 
 -- cluster table --
 -- station_id: INT -> VARCHAR
