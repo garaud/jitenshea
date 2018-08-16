@@ -2,6 +2,8 @@
 -- lyon --
 ----------
 
+DROP VIEW IF EXISTS lyon.timeserie_norm;
+
 -- daily_transaction table --
 -- id: INT -> VARCHAR
 ALTER TABLE lyon.daily_transaction ALTER COLUMN id TYPE VARCHAR;
@@ -23,12 +25,12 @@ ALTER TABLE lyon.timeserie DROP COLUMN IF EXISTS bonus;
 -- id: INT -> VARCHAR
 ALTER TABLE lyon.timeserie ALTER COLUMN id TYPE VARCHAR;
 
--- timeserie*s*
-ALTER TABLE lyon.timeserie RENAME TO timeseries;
-
 -- status column refactoring (value replacement)
 UPDATE lyon.timeserie SET status = 'open' WHERE status = 'OPEN';
 UPDATE lyon.timeserie SET status = 'closed' WHERE status = 'CLOSED';
+
+-- timeserie*s*
+ALTER TABLE lyon.timeserie RENAME TO timeseries;
 
 -- cluster table --
 -- station_id: INT -> VARCHAR
@@ -54,6 +56,8 @@ ALTER TABLE lyon.centroid RENAME COLUMN h9 TO h09;
 --------------
 -- bordeaux --
 --------------
+
+DROP VIEW IF EXISTS bordeaux.timeserie_norm;
 
 -- daily_transaction table --
 -- id: INT -> VARCHAR
