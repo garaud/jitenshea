@@ -501,7 +501,7 @@ class ComputeClustersGeo(luigi.Task):
               ,st_y(geom) as lon
             FROM {schema}.{table};
             """.format(schema=self.city,
-                       table=config['database']['stations'])
+                       table='stations')
         df = pd.io.sql.read_sql_query(query, db())
         clusters = compute_geo_clusters(df)
         self.output().makedirs()
@@ -640,7 +640,7 @@ class StoreGeoClustersToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename='geo_' + config['database']['clustering'])
+            tablename='geo_cluster')
 
     def rows(self):
         inputpath = self.input().path
@@ -670,7 +670,7 @@ class StoreGeoCentroidsToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename='geo_' + config['database']['centroids'])
+            tablename='geo_centroid')
 
     def rows(self):
         inputpath = self.input().path
