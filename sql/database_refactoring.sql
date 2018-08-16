@@ -57,12 +57,12 @@ ALTER TABLE lyon.centroid RENAME COLUMN h9 TO h09;
 ALTER TABLE bordeaux.daily_transactions ALTER COLUMN id TYPE VARCHAR;
 
 -- timeserie table --
--- number -> id
+-- ident -> id
 -- last_update -> timestamp
 -- available_stand -> available_stands
 -- available_bike -> available_bikes
 -- state -> status
-ALTER TABLE bordeaux.timeserie RENAME COLUMN number TO ident;
+ALTER TABLE bordeaux.timeserie RENAME COLUMN ident TO id;
 ALTER TABLE bordeaux.timeserie RENAME COLUMN ts TO timestamp;
 ALTER TABLE bordeaux.timeserie RENAME COLUMN available_stand TO available_stands;
 ALTER TABLE bordeaux.timeserie RENAME COLUMN available_bike TO available_bikes;
