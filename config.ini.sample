@@ -5,17 +5,9 @@ host = localhost
 port = 5432
 # you can write it if necessary
 password
-# table names
-stations = stations
-raw_stations = raw_stations
-timeseries = timeseries
-daily_transaction = daily_transaction
-clustering = cluster
-centroids = centroid
 
 [lyon]
 schema = lyon
-table = timeserie
 srid = 4326
 typename = pvo_patrimoine_voirie.pvostationvelov
 # station geoloc variable names
@@ -33,7 +25,6 @@ feature_status = status
 
 [bordeaux]
 schema = bordeaux
-table = timeserie
 srid = 2154
 typename = TB_STVEL_P
 # station geoloc variable names
@@ -48,6 +39,5 @@ feature_timestamp = heure
 feature_avl_stands = nbplaces
 feature_avl_bikes = nbvelos
 feature_status = etat
-
 # API Key
 key = CHANGME

@@ -152,7 +152,7 @@ class ShapefileIntoDB(luigi.Task):
     """Dump a shapefile into a table
     """
     city = luigi.Parameter()
-    table = config['database']['raw_stations']
+    table = luigi.Parameter()
 
     @property
     def projection(self):
@@ -193,6 +193,7 @@ class NormalizeStationTable(PostgresQuery):
     host = config['database']['host']
     database = config['database']['dbname']
     user = config['database']['user']
+    table = 'station'
     password = None
 
     query = ("DROP TABLE IF EXISTS {schema}.{tablename}; "
@@ -212,21 +213,15 @@ class NormalizeStationTable(PostgresQuery):
              "FROM {schema}.{raw_tablename}"
              ";")
 
-    @property
-    def table(self):
-        return '{schema}.{tablename}'.format(
-            schema=self.city,
-            tablename=config['database']['stations'])
-
     def requires(self):
-        return ShapefileIntoDB(self.city)
+        return ShapefileIntoDB(self.city, 'raw_station')
 
     def run(self):
         connection = self.output().connect()
         cursor = connection.cursor()
         sql = self.query.format(schema=self.city,
                                 tablename=self.table,
-                                raw_tablename=config['database']['raw_stations'],
+                                raw_tablename='raw_station',
                                 id=config[self.city]['feature_id'],
                                 name=config[self.city]['feature_name'],
                                 address=config[self.city]['feature_address'],
@@ -321,13 +316,13 @@ class AvailabilityToCSV(luigi.Task):
                 df = pd.DataFrame([dict(x) for x in data])
                 status_key = config[self.city]['feature_status']
                 df[status_key] = df[status_key].apply(
-                    lambda x: 'open' if x == 'CONNECTEE' else 'close')
+                    lambda x: 'open' if x == 'CONNECTEE' else 'closed')
             elif self.city == 'lyon':
                 data = json.load(fobj)
                 df = pd.DataFrame(data['values'], columns=data['fields'])
                 status_key = config[self.city]['feature_status']
                 df[status_key] = df[status_key].apply(
-                    lambda x: 'open' if x == 'OPEN' else 'close')
+                    lambda x: 'open' if x == 'OPEN' else 'closed')
             else:
                 raise ValueError(("{} is an unknown city.".format(self.city)))
         df = df[[config[self.city]['feature_avl_id'],
@@ -363,7 +358,7 @@ class AvailabilityToDB(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config['database']['timeseries'])
+            tablename='timeseries')
 
     def rows(self):
         """overload the rows method to skip the first line (header)
@@ -409,7 +404,7 @@ class AggregateTransaction(luigi.Task):
                  "WHERE timestamp >= %(start)s AND timestamp < %(stop)s "
                  "ORDER BY timestamp, id"
                  ";").format(schema=self.city,
-                             tablename=config['database']['timeseries'])
+                             tablename='timeseries')
         eng = db()
         query_params = {"start": self.date,
                         "stop": self.date + timedelta(1)}
@@ -444,7 +439,7 @@ class TransactionsIntoDB(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config['database']['daily_transaction'])
+            tablename='daily_transaction')
 
     def rows(self):
         """overload the rows method to skip the first line (header) and add date value
@@ -479,7 +474,7 @@ class ComputeClusters(luigi.Task):
                  "WHERE timestamp >= %(start)s "
                  "AND timestamp < %(stop)s;"
                  "").format(schema=self.city,
-                            table=config['database']['timeseries'])
+                            table='timeseries')
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
@@ -532,13 +527,13 @@ class StoreClustersToDatabase(CopyToTable):
     columns = [('station_id', 'VARCHAR'),
                ('start', 'DATE'),
                ('stop', 'DATE'),
-               ('cluster_id', 'INT')]
+               ('cluster_id', 'VARCHAR')]
 
     @property
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config['database']['clustering'])
+            tablename='cluster')
 
     def rows(self):
         inputpath = self.input().path
@@ -581,7 +576,7 @@ class StoreCentroidsToDatabase(CopyToTable):
     database = config['database']['dbname']
     user = config['database']['user']
     password = None
-    first_columns = [('cluster_id', 'INT'),
+    first_columns = [('cluster_id', 'VARCHAR'),
                      ('start', 'DATE'),
                      ('stop', 'DATE')]
 
@@ -596,7 +591,7 @@ class StoreCentroidsToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename=config['database']['centroids'])
+            tablename='centroid')
 
     def rows(self):
         inputpath = self.input().path
@@ -759,7 +754,7 @@ class TrainXGBoost(luigi.Task):
                  "AND (status = 'open')"
                  "ORDER BY id, timestamp"
                  ";").format(schema=self.city,
-                             tablename=config['database']['timeseries'])
+                             tablename='timeseries')
         eng = db()
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
