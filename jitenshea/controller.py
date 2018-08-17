@@ -485,7 +485,7 @@ def station_cluster_query(city):
             "FROM ranked_clusters "
             "WHERE rank=1"
             ";").format(schema=city,
-                        cluster='cluster',
+                        cluster='clustering',
                         station='station')
 
 
