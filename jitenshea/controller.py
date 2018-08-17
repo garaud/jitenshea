@@ -222,7 +222,7 @@ def _query_stations(city, limit=20):
     FROM {schema}.{table}
     LIMIT {limit}
     """.format(schema=city,
-               table=config['database']['stations'],
+               table='station',
                limit=limit)
 
 
@@ -239,8 +239,8 @@ def daily_query(city):
         LEFT JOIN {schema}.{station} AS Y using(id)
         WHERE id IN %(id_list)s AND date >= %(start)s AND date <= %(stop)s
         ORDER BY id,date""".format(schema=city,
-                                   table=config['database']['daily_transaction'],
-                                   station=config['database']['stations'])
+                                   table='daily_transaction',
+                                   station='station')
 
 
 def daily_query_stations(city, limit, order_by='station'):
@@ -268,9 +268,9 @@ def daily_query_stations(city, limit, order_by='station'):
         LEFT JOIN {schema}.{table} AS D ON (S.id=D.id)
         LEFT JOIN {schema}.{station} AS Y ON S.id=Y.id
         WHERE D.date >= %(start)s AND D.date <= %(stop)s
-        ORDER BY S.rank,D.date;""".format(schema=config[city]['schema'],
-                                          table=config['database']['daily_transaction'],
-                                          station=config['database']['stations'],
+        ORDER BY S.rank,D.date;""".format(schema=city,
+                                          table='daily_transaction',
+                                          station='station',
                                           order_by=order_by,
                                           limit=limit)
 
@@ -330,9 +330,9 @@ def timeseries(city, station_ids, start, stop):
     LEFT JOIN {schema}.{station} AS S using(id)
     WHERE id IN %(id_list)s AND timestamp >= %(start)s AND timestamp < %(stop)s
     ORDER BY id,timestamp
-    """.format(schema=config[city]['schema'],
-               table=config['database']['timeseries'],
-               station=config['database']['stations'])
+    """.format(schema=city,
+               table='timeseries',
+               station='station')
     eng = db()
     rset = eng.execute(query, id_list=tuple(x for x in station_ids),
                        start=start, stop=stop)
@@ -443,8 +443,8 @@ def get_station_ids(city):
         IDs of the shared-bike stations in the `city`
     """
     query = ("SELECT id FROM {schema}.{table}"
-             ";").format(schema=config[city]["schema"],
-                         table=config['database']['stations'])
+             ";").format(schema=city,
+                         table='station')
     eng = db()
     rset = eng.execute(query).fetchall()
     if not rset:
@@ -484,9 +484,9 @@ def station_cluster_query(city):
             "st_y(geom) as y "
             "FROM ranked_clusters "
             "WHERE rank=1"
-            ";").format(schema=config[city]['schema'],
-                        cluster=config['database']['clustering'],
-                        station=config['database']['stations'])
+            ";").format(schema=city,
+                        cluster='clustering',
+                        station='station')
 
 
 def station_clusters(city, station_ids=None, geojson=False):
@@ -548,8 +548,8 @@ def cluster_profile_query(city):
             "start, stop "
             "FROM ranked_centroids "
             "WHERE rank=1"
-            ";").format(schema=config[city]['schema'],
-                        centroid=config["database"]['centroids'])
+            ";").format(schema=city,
+                        centroid='centroid')
 
 
 def cluster_profiles(city):
