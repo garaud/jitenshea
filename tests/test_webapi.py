@@ -100,7 +100,7 @@ def test_api_clustering_stations(client):
     assert resp.status_code == 200
     data = json.loads(resp.data)['data']
     # there are just 4 clusters
-    assert {0, 1, 2, 3} == set(x['cluster_id'] for x in data)
+    assert {'0', '1', '2', '3'} == set(x['cluster_id'] for x in data)
     resp = client.get('/api/bordeaux/clustering/stations',
                       query_string={"geojson": True})
     assert resp.status_code == 200
@@ -110,4 +110,4 @@ def test_api_clustering_centroids(client):
     resp = client.get('/api/bordeaux/clustering/centroids')
     assert resp.status_code == 200
     data = json.loads(resp.data)['data']
-    assert {0, 1, 2, 3} == set(x['cluster_id'] for x in data)
+    assert {'0', '1', '2', '3'} == set(x['cluster_id'] for x in data)
