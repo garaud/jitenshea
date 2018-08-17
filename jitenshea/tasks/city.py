@@ -533,7 +533,7 @@ class StoreClustersToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename='cluster')
+            tablename='clustering')
 
     def rows(self):
         inputpath = self.input().path
@@ -640,7 +640,7 @@ class StoreGeoClustersToDatabase(CopyToTable):
     def table(self):
         return '{schema}.{tablename}'.format(
             schema=self.city,
-            tablename='geo_cluster')
+            tablename='geo_clustering')
 
     def rows(self):
         inputpath = self.input().path
