@@ -32,7 +32,8 @@ from luigi.format import UTF8, MixedUnicodeBytes
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
 from jitenshea.stats import (compute_clusters, train_prediction_model,
-                             compute_geo_clusters)
+                             compute_geo_clusters,
+                             load_model, predict_bike_availability)
 
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
@@ -759,9 +760,132 @@ class TrainXGBoost(luigi.Task):
         df = pd.io.sql.read_sql_query(query, eng,
                                       params={"start": self.start,
                                               "stop": self.stop})
+        df.station_id = df.station_id.astype(int)
         if df.empty:
             raise Exception("There is not any data to process in the DataFrame. "
                             + "Please check the dates.")
         prediction_model = train_prediction_model(df, self.validation, self.frequency)
         self.output().makedirs()
         prediction_model.save_model(self.output().path)
+
+
+class PredictBikeAvailability(luigi.Task):
+    """Predict bike availability starting from a trained XGBoost model stored
+    on the file system
+
+    Attributes
+    ----------
+    city : luigi.Parameter
+        City of interest, *e.g.* Bordeaux or Lyon
+    start : luigi.DateParameter
+        Training start date
+    stop : luigi.DataParameter
+        Training stop date upper bound (actually the end date is computed with
+    `validation`)
+    validation : luigi.DateMinuteParameter
+        Date that bounds the training set and the validation set during the
+    XGBoost model training
+    frequency : DateOffset, timedelta or str
+        Indicates the prediction frequency
+    """
+    city = luigi.Parameter()
+    train_start = luigi.DateParameter()
+    train_stop = luigi.DateParameter()
+    train_cut = luigi.DateMinuteParameter()
+    start = luigi.DateMinuteParameter()
+    stop = luigi.DateMinuteParameter()
+    frequency = luigi.Parameter(default="30T")
+
+    def outputpath(self):
+        fname = ("{}-to-{}-at-{}-freq-{}.model.{}-to-{}.predictions.csv"
+                 "").format(self.train_start, self.train_stop,
+                            self.train_cut.isoformat(),
+                            self.frequency, self.start, self.stop)
+        return os.path.join(DATADIR, self.city, 'xgboost-model', fname)
+
+    def output(self):
+        return luigi.LocalTarget(self.outputpath(), format=MixedUnicodeBytes)
+
+    def requires(self):
+        return TrainXGBoost(self.city, self.train_start, self.train_stop,
+                            self.train_cut, self.frequency)
+
+    def run(self):
+        query = ("SELECT DISTINCT id AS station_id, timestamp AS ts, "
+                 "available_bikes AS nb_bikes, available_stands AS nb_stands, "
+                 "available_bikes::float / (available_bikes::float "
+                 "+ available_stands::float) AS probability "
+                 "FROM {schema}.{tablename} "
+                 "WHERE timestamp >= %(start)s "
+                 "AND timestamp < %(stop)s "
+                 "AND (available_bikes > 0 OR available_stands > 0) "
+                 "AND (status = 'open')"
+                 "ORDER BY id, timestamp"
+                 ";").format(schema=self.city,
+                             tablename='timeseries')
+        eng = db()
+        df = pd.io.sql.read_sql_query(query, eng,
+                                      params={"start": self.start,
+                                              "stop": self.stop})
+        df.station_id = df.station_id.astype(int)
+        if df.empty:
+            raise Exception("There is not any data to process in the "
+                            + "prediction DataFrame. Please check the dates.")
+        trained_model = load_model(self.input().path)
+        predictions = predict_bike_availability(df,
+                                                trained_model,
+                                                self.frequency.replace('T', 'm'))
+        with self.output().open('w') as fobj:
+            predictions.reset_index().to_csv(fobj, index=False)
+
+
+class StorePredictionToDatabase(CopyToTable):
+    """Read the XGBoost predictions from `DATADIR/<city>/xgboost-model/.h5` file and
+    store them into `predictions` table
+
+    """
+    city = luigi.Parameter()
+    train_start = luigi.DateParameter()
+    train_stop = luigi.DateParameter()
+    train_cut = luigi.DateMinuteParameter()
+    predict_start = luigi.DateMinuteParameter(default=None, interval=5)
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+    frequency = luigi.Parameter(default="30T")
+
+    host = config['database']['host']
+    database = config['database']['dbname']
+    user = config['database']['user']
+    password = None
+    columns = [('timestamp', 'TIMESTAMP'),
+               ('frequency', 'VARCHAR'),
+               ('station_id', 'VARCHAR'),
+               ('availability', 'NUMERIC'),
+               ('nb_bikes', 'INT'),
+               ('nb_stands', 'INT')]
+
+    @property
+    def table(self):
+        return '{schema}.{tablename}'.format(
+            schema=self.city,
+            tablename='prediction')
+
+    @property
+    def start(self):
+        if self.predict_start is None:
+            return self.timestamp - pd.Timedelta('5m')
+        else:
+            return self.predict_start
+
+    def requires(self):
+        return PredictBikeAvailability(self.city, self.train_start,
+                                       self.train_stop, self.train_cut,
+                                       self.start, self.timestamp,
+                                       self.frequency)
+
+    def rows(self):
+        inputpath = self.input().path
+        predictions = pd.read_csv(inputpath)
+        for _, row in predictions.iterrows():
+            modified_row = list(row.values)
+            modified_row.insert(1, self.frequency)
+            yield modified_row

@@ -350,3 +350,58 @@ def train_prediction_model(df, validation_date, frequency):
     train_X, train_Y, test_X, test_Y = train_test_split
     trained_model = fit(train_X, train_Y, test_X, test_Y)
     return trained_model[0]
+
+def load_model(filepath):
+    """Load a XGBoost trained model stored in the indicated `filepath`
+
+    Parameters
+    ----------
+    filepath : str
+        Path of the trained model on the file system
+
+    Returns
+    -------
+    XGBoost.Booster
+        XGBoost trained model
+    """
+    trained_model = xgb.Booster()
+    trained_model.load_model(filepath)
+    return trained_model
+
+def predict_bike_availability(df_test, trained_model, frequency):
+    """Predict shared-bike availability on time-periods described in `df_test`,
+    starting from a trained XGBoost model
+
+    Parameters
+    ----------
+    df_test : pandas.dataframe
+        Data on which predictions will be made
+    trained_model : xgboost.core.Booster
+        Trained model, used to predict bike availability levels (between 0 and
+    1)
+    frequency : DateOffset, timedelta or str
+        Indicates the prediction frequency
+
+    Returns
+    -------
+    pandas.dataframe
+        Predicted bike availability levels
+    """
+    df_test = time_resampling(df_test)
+    df_test = complete_data(df_test)
+    df_test = df_test.set_index(["ts"])
+    predicted_df = df_test.drop(["probability"], axis=1).copy()
+    xg_test = xgb.DMatrix(predicted_df)
+    predictions = trained_model.predict(xg_test)
+    predicted_df = predicted_df.drop(["day", "hour", "minute"], axis=1)
+    predicted_df.index = predicted_df.index + pd.Timedelta(frequency)
+    predicted_df["pred_probability"] = predictions
+    total_stands = predicted_df["nb_bikes"] + predicted_df["nb_stands"]
+    predicted_df["pred_nb_bikes"] = (total_stands
+                                     * predicted_df["pred_probability"])
+    predicted_df["pred_nb_bikes"] = predicted_df["pred_nb_bikes"].astype(int)
+    predicted_df["pred_nb_stands"] = (total_stands -
+                                      predicted_df["pred_nb_bikes"])
+    predicted_df["pred_nb_stands"] = predicted_df["pred_nb_stands"].astype(int)
+    predicted_df = predicted_df.drop(["nb_stands", "nb_bikes"], axis=1)
+    return predicted_df
