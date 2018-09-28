@@ -88,8 +88,8 @@ def processing_predictions(rset):
         values.append({'id': k,
                        'name': group[0]['name'],
                        "ts": [x['timestamp'] for x in group],
-                       'predicted_bikes': [x['pred_nb_bikes'] for x in group],
-                       'predicted_stands': [x['pred_nb_stands'] for x in group]})
+                       'predicted_bikes': [x['nb_bikes'] for x in group],
+                       'predicted_stands': [x['nb_stands'] for x in group]})
     return {"data": values}
 
 
@@ -380,8 +380,8 @@ def predictions(city, station_ids, start, stop):
     """
     query = ("SELECT T.station_id AS id, "
              "T.timestamp AS timestamp, "
-             "T.pred_nb_bikes AS pred_nb_bikes, "
-             "T.pred_nb_stands AS pred_nb_stands, "
+             "T.nb_bikes AS nb_bikes, "
+             "T.nb_stands AS nb_stands, "
              "S.name AS name "
              "FROM {schema}.{table} AS T "
              "LEFT JOIN {schema}.{station} AS S "
