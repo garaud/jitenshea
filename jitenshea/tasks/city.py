@@ -834,8 +834,8 @@ class StorePredictionToDatabase(CopyToTable):
     train_start = luigi.DateParameter()
     train_stop = luigi.DateParameter()
     train_cut = luigi.DateMinuteParameter()
-    predict_start = luigi.DateMinuteParameter(default=None, interval=5)
-    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=5)
+    predict_start = luigi.DateMinuteParameter(default=None, interval=10)
+    timestamp = luigi.DateMinuteParameter(default=dt.now(), interval=10)
     frequency = luigi.Parameter(default="30T")
 
     host = config['database']['host']
@@ -858,7 +858,7 @@ class StorePredictionToDatabase(CopyToTable):
     @property
     def start(self):
         if self.predict_start is None:
-            return self.timestamp - pd.Timedelta('5m')
+            return self.timestamp - pd.Timedelta('10m')
         else:
             return self.predict_start
 
