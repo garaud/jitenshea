@@ -15,13 +15,14 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(_ROOT, 'config.ini')
+_CONFIG = os.getenv('JITENSHEA_CONFIG')
+_CONFIG = _CONFIG if _CONFIG is not None else os.path.join(_ROOT, 'config.ini')
 
 
-if not os.path.isfile(CONFIG_FILE):
-    logger.warning("Configuration file '%s' not found", CONFIG_FILE)
+if not os.path.isfile(_CONFIG):
+    logger.warning("Configuration file '%s' not found", _CONFIG)
     config = None
 else:
     config = configparser.ConfigParser(allow_no_value=True)
-    with open(CONFIG_FILE) as fobj:
+    with open(_CONFIG) as fobj:
         config.read_file(fobj)
