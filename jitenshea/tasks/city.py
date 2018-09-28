@@ -31,6 +31,7 @@ from luigi.format import UTF8, MixedUnicodeBytes
 
 from jitenshea import config
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
+from jitenshea.tasks.controller import latest_station_timewindow
 from jitenshea.stats import (compute_clusters, train_prediction_model,
                              compute_geo_clusters,
                              load_model, predict_bike_availability)
@@ -811,22 +812,7 @@ class PredictBikeAvailability(luigi.Task):
                             self.train_cut, self.frequency)
 
     def run(self):
-        query = ("SELECT DISTINCT id AS station_id, timestamp AS ts, "
-                 "available_bikes AS nb_bikes, available_stands AS nb_stands, "
-                 "available_bikes::float / (available_bikes::float "
-                 "+ available_stands::float) AS probability "
-                 "FROM {schema}.{tablename} "
-                 "WHERE timestamp >= %(start)s "
-                 "AND timestamp < %(stop)s "
-                 "AND (available_bikes > 0 OR available_stands > 0) "
-                 "AND (status = 'open')"
-                 "ORDER BY id, timestamp"
-                 ";").format(schema=self.city,
-                             tablename='timeseries')
-        eng = db()
-        df = pd.io.sql.read_sql_query(query, eng,
-                                      params={"start": self.start,
-                                              "stop": self.stop})
+        df = latest_station_timewindow(self.city, self.start, self.stop)
         df.station_id = df.station_id.astype(int)
         if df.empty:
             raise Exception("There is not any data to process in the "
