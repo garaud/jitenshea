@@ -394,6 +394,55 @@ def predictions(city, station_ids, start, stop):
     return processing_predictions(rset)
 
 
+def latest_predictions(city, limit, geojson, freq='1H'):
+    """Get bike availability predictions for a specific city.
+
+    Parameters
+    ----------
+    city : str
+        Name of the city
+    limit : int
+        Max number of stations
+    geosjon : bool
+        Data in geojson?
+    freq : str
+        Time horizon
+
+    Returns
+    -------
+    dict
+    """
+    query = """with latest as (
+      select station_id as id
+        ,timestamp
+        ,nb_bikes
+        ,rank() over (partition by station_id order by timestamp desc) as rank
+      from {city}.prediction
+      where frequency=%(freq)s
+    )
+    select P.id
+      ,P.timestamp
+      ,P.nb_bikes
+      ,S.name
+      ,S.nb_stations
+      ,st_x(S.geom) as x
+      ,st_y(S.geom) as y
+    from latest as P
+    join {city}.station as S using(id)
+    where P.rank=1
+    order by id
+    limit %(limit)s
+    """.format(city=city)
+    eng = db()
+    rset = eng.execute(query, freq=freq, limit=limit)
+    keys = rset.keys()
+    result = [dict(zip(keys, row)) for row in rset]
+    predict_date = max(x['timestamp'] for x in result)
+    if geojson:
+        return station_geojson(result, feature_list=['id', 'name', 'timestamp', 'nb_bikes', 'nb_stations'])
+    return {"data": result, "date": predict_date}
+
+
 def hourly_process(df):
     """DataFrame with timeseries into a hourly transaction profile
 
