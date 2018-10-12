@@ -118,7 +118,7 @@ def time_window(day, window, backward):
     return TimeWindow(start, stop, order_reference_date)
 
 
-def station_geojson(stations):
+def station_geojson(stations, feature_list):
     """Process station data into GeoJSON
     """
     result = []
@@ -129,13 +129,8 @@ def station_geojson(stations):
                  "type": "Point",
                  "coordinates": [data['x'], data['y']]
              },
-             "properties": {
-                 "id": data['id'],
-                 "name": data['name'],
-                 "address": data['address'],
-                 "city": data['city'],
-                 "nb_bikes": data['nb_bikes']
-             }})
+             "properties": {k: data[k] for k in feature_list}
+            })
     return {"type": "FeatureCollection", "features": result}
 
 
@@ -187,9 +182,9 @@ def cities():
 def stations(city, limit, geojson):
     """List of bicycle stations
 
-    city: string
-    limit: int
-    geojson: boolean
+    city : string
+    limit : int
+    geojson : boolean
 
     Return a list of dict, one dict by bicycle station
     """
@@ -199,7 +194,8 @@ def stations(city, limit, geojson):
     keys = rset.keys()
     result = [dict(zip(keys, row)) for row in rset]
     if geojson:
-        return station_geojson(result)
+        return station_geojson(result,
+                               feature_list=['id', 'name', 'address', 'city', 'nb_bikes'])
     return {"data": result}
 
 
