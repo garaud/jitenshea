@@ -6,24 +6,39 @@ html, body {
 }
 
 body.home {
-    background: url(img/bg-front.jpg);
     color: #fff;
 }
 
+a {
+    color: #3a74ac;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #3a74ac;
+    border-color: #3a74ac;
+}
+
+.centered {
+    text-align: center;
+    margin-bottom: 0;
+}
+
 .jt-header {
+    background: url(img/bg-front.jpg);
     position: relative;
     overflow: hidden;
-    height: 150px;
+    height: 300px;
     padding-top: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0px 5px 14px rgba(100, 100, 100, 0.2);
 }
-.jt-header img {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
-    opacity: 0.5;
-    filter: blur(1px);
+
+.jt-header h1 {
+    margin-left: 700px;
+    margin-top: 100px;
+    color: #fff;
+    font-weight: bold;
 }
 
 h1 {
@@ -60,14 +75,26 @@ h3 svg {
 }
 
 .home-widget {
-    background: rgba(255, 255, 255, 0.2);
+    margin-right: auto;
+    margin-left: auto;
+    background: rgba(200, 200, 200, 0.2);
     border-radius: 5px;
-    padding: 10px;
     transition: background-color 0.5s ease;
+    padding-bottom: 10px;
 }
 
-.home-widget:hover {
-    background: rgba(100, 100, 100, 0.6);
+.home-widget .panel-header {
+    padding: 5px;
+}
+
+.home-widget .panel-body {
+    padding: 10px;
+    background: rgba(200, 200, 200, 0.4);
+    border-radius: 5px;
+}
+
+.home-widget .panel-body:hover {
+    background: #ded7d1;
 }
 
 /* .jt-citylist-header { */
