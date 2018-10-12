@@ -3,14 +3,13 @@
 {% block content %}
 
 
-<div class="container jt-header">
+<div class="jt-header">
   <h1>Bicycle-sharing Data Analysis</h1>
-<!--   <img src="{{ url_for('static', filename='bicyle-sharing-background.jpg') }}"> -->
 </div>
 
 
 <div class="container">
-  <h4>Description</h4>
+  <h2>Description</h2>
   <p>Get and visualize some bicycle-sharing <b>Open Data</b>.</p>
   <p>Developed and hosted by the <a href="http://oslandia.com">Oslandia</a> team!</p>
 
@@ -20,51 +19,49 @@
 
   This an Open Source projects makes with Open Data and Open Source dependencies:
   python, postgresql, postgis, etc.
+
+    <div class="row widgets">
+        <div class="home-widget col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i data-feather="database"></i>Data Processing</h3>
+                </div>
+                <div class="panel-body">
+                    <p>Data pipeline and dataprocessing. Automated tasks from
+                        Open Data to the database.</p>
+                    <p class="centered"><a class="btn btn-primary" href="https://github.com/garaud/jitenshea">Github</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="home-widget col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i data-feather="bar-chart-2"></i>Data Analysis</h3>
+                </div>
+                <div class="panel-body">
+                    <p>Get some stats from history timeseries: most used
+                        bicycle stations, peak frequency, etc.</p>
+                    <p class="centered"><a class="btn btn-primary" href="{{ url_for('citylist') }}">Cities page</a></p>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="home-widget col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i data-feather="code"></i>API</h3>
+                </div>
+                <div class="panel-body">
+                    <p>Retrieve the data and the analysis with a simple Web
+                        API. Get some data in JSON or GeoJSON.</p>
+                    <p class="centered"><a class="btn btn-primary" href="{{ url_for('swagger_ui') }}">API</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-
-<div class="row widgets">
-  <div class="container home-widget col-md-3">
-  <div class="panel panel-default">
-    <div class="panel-header">
-      <h3 class="panel-title"><i data-feather="database"></i>Data Processing</h3>
-    </div>
-    <div class="panel-body">
-      <p>Data pipeline and dataprocessing. Automated tasks from
-        Open Data to the database.</p>
-      <a class="btn btn-primary" href="https://github.com/garaud/jitenshea">Github</a>
-    </div>
-  </div>
-  </div>
-
-  <div class="container home-widget col-md-3">
-  <div class="panel panel-default">
-    <div class="panel-header">
-      <h3 class="panel-title"><i data-feather="bar-chart-2"></i>Data Analysis</h3>
-    </div>
-    <div class="panel-body">
-      <p>Get some stats from history timeseries: most used
-        bicycle stations, peak frequency, etc.</p>
-      <a class="btn btn-primary" href="{{ url_for('citylist') }}">Cities page</a>
-    </div>
-  </div>
-  </div>
-
-
-  <div class="container home-widget col-md-3">
-  <div class="panel panel-default">
-    <div class="panel-header">
-      <h3 class="panel-title"><i data-feather="code"></i>API</h3>
-    </div>
-    <div class="panel-body">
-      <p>Retrieve the data and the analysis with a simple Web
-        API. Get some data in JSON or GeoJSON.</p>
-      <a class="btn btn-primary" href="{{ url_for('swagger_ui') }}">API</a>
-    </div>
-  </div>
-  </div>
-</div>
-
 
 
 {% endblock %}
