@@ -15,7 +15,22 @@ app.config['ERROR_404_HELP'] = False
 app.config['SWAGGER_UI_DOC_EXPANSION'] = 'list'
 
 CITIES = ['bordeaux', 'lyon']
-
+CITIES_DESC = [{
+                    'id': 'bordeaux',
+                    'title': 'Bordeaux', 
+                    'img': 'img/bordeaux.jpg',
+                    'desc': 'The famous French city for its wine. Visit the Website dedicated to their',
+                    'opendata_url': 'http://opendata.bordeaux.fr/recherche/results',
+                    'stats': 'More than 170 bicycle stations, +10,000 transactions in a day'
+                },
+               {
+                    'id': 'lyon',
+                    'title': 'Lyon',
+                    'img': 'img/lyon.jpg',
+                    'desc': 'Lyon is the one of the largest cities of France. You can find the Website dedicated to their ',
+                    'opendata_url': 'https://data.grandlyon.com/',
+                    'stats': 'More than 340 bicycle stations, +30,000 transactions in a day'
+                }]
 
 def check_city(city):
     if city not in CITIES:
@@ -31,7 +46,8 @@ def swagger_ui():
 
 @app.route('/city')
 def citylist():
-    return render_template('citylist.html')
+    cities = CITIES_DESC
+    return render_template('citylist.html', cities=cities)
 
 @app.route("/<string:city>")
 def city_view(city):
