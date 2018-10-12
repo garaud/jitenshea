@@ -2,7 +2,6 @@
 """Statistical methods used for analyzing the shared bike data
 """
 
-import logging
 import daiquiri
 
 import numpy as np
@@ -16,7 +15,6 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 
-daiquiri.setup(logging.INFO)
 logger = daiquiri.getLogger("stats")
 
 

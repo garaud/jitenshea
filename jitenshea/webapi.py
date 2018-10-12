@@ -4,16 +4,15 @@
 """
 
 import daiquiri
-import logging
 
 from datetime import date, datetime
 from dateutil.parser import parse
 
 from werkzeug.routing import BaseConverter
 
-from flask import abort, jsonify, request, render_template
+from flask import jsonify
 from flask.json import JSONEncoder
-from flask_restplus import fields, inputs
+from flask_restplus import inputs
 from flask_restplus import Resource, Api
 
 from jitenshea import controller
@@ -24,8 +23,8 @@ ISO_DATE = '%Y-%m-%d'
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S'
 CITIES = ('lyon', 'bordeaux')
 
-daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea-webapi")
+
 
 class CustomJSONEncoder(JSONEncoder):
     """Custom JSON encoder to handle date

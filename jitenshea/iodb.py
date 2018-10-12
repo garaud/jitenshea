@@ -3,15 +3,14 @@
 """Some function to read and write with a PostgreSQL/PostGIS database
 """
 
-import os
-import logging
+import daiquiri
 
 from sqlalchemy import create_engine
 
 from jitenshea import config
 
 
-logger = logging.getLogger(__name__)
+logger = daiquiri.getLogger(__name__)
 
 
 def psql_args():

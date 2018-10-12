@@ -4,14 +4,11 @@
 """
 
 import daiquiri
-import logging
 
 from flask import Flask, render_template, abort
 
 
-daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger("jitenshea-webapp")
-
 
 app = Flask(__name__)
 app.config['ERROR_404_HELP'] = False

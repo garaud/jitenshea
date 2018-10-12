@@ -5,7 +5,6 @@
 
 
 import daiquiri
-import logging
 
 from itertools import groupby
 from datetime import timedelta
@@ -13,12 +12,10 @@ from collections import namedtuple
 
 import pandas as pd
 
-from jitenshea import config
 from jitenshea.stats import find_cluster
 from jitenshea.iodb import db
 
 
-daiquiri.setup(level=logging.INFO)
 logger = daiquiri.getLogger(__name__)
 
 CITIES = ('bordeaux',
