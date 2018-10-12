@@ -241,6 +241,19 @@ class PredictStation(Resource):
         return jsonify(rset)
 
 
+@api.route("/<string:city>/predict/station")
+class PredictStationList(Resource):
+    @api.doc(parser=station_list_parser,
+             description="Bicycle stations prediction")
+    def get(self, city):
+        check_city(city)
+        args = station_list_parser.parse_args()
+        limit = args['limit']
+        geojson = args['geojson']
+        rset = controller.latest_predictions(city, limit, geojson, freq='1H')
+        return jsonify(rset)
+
+
 @api.route("/<string:city>/profile/hourly/station/<list:ids>")
 class CityHourlyStation(Resource):
     @api.doc(parser=hourly_profile_parser,
