@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>Available Cities</h2>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"
+        aria-current="page"><a href="{{url_for('index')}}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Cities</li>
+  </ol>
+</nav>
+
+<div class="container">
+</div>
+
+<div class="container city">
+  <h2>Lyon</h2>
+  <img src="{{ url_for('static', filename='lyon-city.png') }}">
+  <p>Lyon is the one of the largest cities of France. You can find the
+  Website dedicated to their <a href="https://data.grandlyon.com/">Open Data</a>.</p>
+  <hr class="my-4">
+  <p>More than 340 bicycle stations, +30,000 transactions in a day</p>
+  <p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('city_view', city='lyon') }}"
+    role="button">City page</a>
+  </p>
+</div>
+
+<div class="container">
+  <h2>Bordeaux</h2>
+  <img src="{{ url_for('static', filename='bordeaux-city.jpg') }}">
+  <p>The famous French city for its wine. Visit the Website dedicated
+  to their <a href="http://opendata.bordeaux.fr/recherche/results">Open Data</a>.</p>
+  <hr class="my-4">
+  <p>More than 170 bicycle stations, +10,000 transactions in a day</p>
+  <p>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('city_view', city='bordeaux') }}"
+    role="button">City page</a>
+  </p>
+</div>
+
+
+{% endblock %}
