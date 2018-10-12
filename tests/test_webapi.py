@@ -125,3 +125,20 @@ def test_api_prediction(client):
     assert len(data) == 1
     assert 'predicted_stands' in data[0]
     assert 'predicted_bikes' in data[0]
+
+
+def test_api_latest_prediction(client):
+    """Latest predictions for all stations.
+    """
+    resp = client.get('/api/bordeaux/predict/station')
+    assert resp.status_code == 200
+    data = resp.get_json()['data']
+    date = resp.get_json()['date']
+    assert len(data) == 100
+    # in GeoJSON
+    resp = client.get('/api/bordeaux/predict/station',
+                      query_string={'limit': 5, 'geojson': True})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data['features']) == 5
+    assert data['features'][0]['geometry']['type'] == 'Point'
