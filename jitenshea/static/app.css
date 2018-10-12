@@ -51,13 +51,57 @@ h3 svg {
     padding-top: 5px;
 }
 
+.breadcrumb {
+    border-radius: none;
+}
+
+
 .city {
-  width: 200px;
-  height: 200px;
-  display: block;
+  width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10px;
   position: relative;
 }
 
+.city .img {
+    -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+    filter: grayscale(100%);
+    transition-duration: 1s;
+}
+
+.city .img:hover {
+    -webkit-filter: grayscale(0%); /* Safari 6.0 - 9.0 */
+    filter: grayscale(0%);
+}
+
+.city .img img {
+    border-radius: 5px;
+}
+
+.city .desc {
+    position: absolute;
+    bottom: 0;
+    background: rgba(100, 100, 100, 0.6);
+    color: #fff;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.city .desc a {
+    color: #ccc;
+    font-weight: bold;
+}
+
+.city .stats {
+
+}
+
+.city-button a {
+    width: 100%;
+}
+
+/*
 .city::after {
   content: "";
   background: url(lyon-city.png);
@@ -69,6 +113,7 @@ h3 svg {
   position: absolute;
   z-index: -1;
 }
+*/
 
 .widgets {
     margin-top: 20px;
