@@ -70,6 +70,7 @@ def parse_date(strdate):
         api.abort(422, "date from the request cannot be parsed: {}".format(e))
     return day
 
+
 def parse_timestamp(str_timestamp):
     """Parse a string and convert it to a datetime
 
@@ -83,6 +84,7 @@ def parse_timestamp(str_timestamp):
     except Exception as e:
         api.abort(422, "date from the request cannot be parsed: {}".format(e))
     return dt
+
 
 def check_city(city):
     if city not in CITIES:
@@ -125,9 +127,9 @@ daily_list_parser.add_argument("backward", required=False, type=inputs.boolean,
 
 timeseries_parser = api.parser()
 timeseries_parser.add_argument("start", required=True, dest="start", location="args",
-                          help="Start date YYYY-MM-DDThhmm")
+                               help="Start date YYYY-MM-DDThhmm")
 timeseries_parser.add_argument("stop", required=True, dest="stop", location="args",
-                          help="Stop date YYYY-MM-DDThhmm")
+                               help="Stop date YYYY-MM-DDThhmm")
 
 hourly_profile_parser = api.parser()
 hourly_profile_parser.add_argument("date", required=True, dest="date", location="args",
@@ -139,7 +141,7 @@ daily_profile_parser = api.parser()
 daily_profile_parser.add_argument("date", required=True, dest="date", location="args",
                                   help="day of the transactions (YYYY-MM-DD)")
 daily_profile_parser.add_argument("window", required=False, type=int, default=30, dest="window",
-                                   location="args", help="How many backward days?")
+                                  location="args", help="How many backward days?")
 
 clustering_parser = api.parser()
 clustering_parser.add_argument("geojson", required=False, type=inputs.boolean,
@@ -153,16 +155,18 @@ class City(Resource):
     def get(self):
         return jsonify(controller.cities())
 
+
 @api.route("/<string:city>/station")
 class CityStationList(Resource):
     @api.doc(parser=station_list_parser,
-                 description="Bicycle-sharing stations")
+             description="Bicycle-sharing stations")
     def get(self, city):
         check_city(city)
         args = station_list_parser.parse_args()
         limit = args['limit']
         geojson = args['geojson']
         return jsonify(controller.stations(city, limit, geojson))
+
 
 @api.route("/<string:city>/station/<list:ids>")
 class CityStation(Resource):
@@ -173,6 +177,7 @@ class CityStation(Resource):
         if not rset:
             api.abort(404, "No such id: {}".format(ids))
         return jsonify(rset)
+
 
 @api.route("/<string:city>/daily/station/<list:ids>")
 class CityDailyStation(Resource):
@@ -288,6 +293,7 @@ class CityClusterCentroids(Resource):
         if not rset:
             api.abort(404, ("No K-means algorithm trained in this city"))
         return jsonify(rset)
+
 
 @api.route("/<string:city>/clustering/centroids")
 class CityClusterCentroids(Resource):
