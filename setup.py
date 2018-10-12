@@ -7,8 +7,8 @@ with open("README.md") as fobj:
     LONG_DESCRIPTION = fobj.read()
 
 INSTALL_REQUIRES = ["pandas", "requests", "psycopg2-binary", "luigi", 'sqlalchemy',
-                    'lxml', 'xgboost', 'daiquiri', 'flask-restplus', 'sh', 'seaborn',
-                    'scikit-learn', 'tables']
+                    'lxml', 'xgboost', 'daiquiri', 'Flask==1.0.2', 'flask-restplus==0.12.1',
+                    'sh', 'seaborn', 'scikit-learn', 'tables']
 
 
 setuptools.setup(
