@@ -1,10 +1,10 @@
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 
 from jitenshea.webapp import app
-from jitenshea.webapi import api, ISO_DATE
+from jitenshea.webapi import api, ISO_DATE, ISO_DATETIME
 
 
 app.config['TESTING'] = True
@@ -111,3 +111,17 @@ def test_api_clustering_centroids(client):
     assert resp.status_code == 200
     data = json.loads(resp.data)['data']
     assert {'0', '1', '2', '3'} == set(x['cluster_id'] for x in data)
+
+
+def test_api_prediction(client):
+    stop = datetime.today() - timedelta(seconds=3600)
+    start = stop - timedelta(seconds=3600)
+    params = {'start': start.strftime(ISO_DATETIME),
+              'stop': stop.strftime(ISO_DATETIME)}
+    resp = client.get('/api/bordeaux/predict/station/22',
+                      query_string=params)
+    assert resp.status_code == 200
+    data = resp.get_json()['data']
+    assert len(data) == 1
+    assert 'predicted_stands' in data[0]
+    assert 'predicted_bikes' in data[0]
