@@ -1,18 +1,20 @@
 /* Jitenshea app CSS */
 
 html, body {
-    margin: 1em;
-    margin-right: 3em;
+    margin: 0;
+    padding: 0;
 }
 
+body.home {
+    background: url(img/bg-front.jpg);
+    color: #fff;
+}
 
 .jt-header {
-    text-align: center;
     position: relative;
     overflow: hidden;
-    height: 300px;
-    color: black;
-    padding: 30px;
+    height: 150px;
+    padding-top: 30px;
 }
 .jt-header img {
     position: absolute;
@@ -24,7 +26,15 @@ html, body {
     filter: blur(1px);
 }
 
+h1 {
+    font-size: 40px;
+    font-weight: bold;
+}
 
+h3 svg {
+    margin-right: 10px;
+    padding-top: 5px;
+}
 
 .city {
   width: 200px;
@@ -45,6 +55,20 @@ html, body {
   z-index: -1;
 }
 
+.widgets {
+    margin-top: 20px;
+}
+
+.home-widget {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    transition: background-color 0.5s ease;
+}
+
+.home-widget:hover {
+    background: rgba(100, 100, 100, 0.6);
+}
 
 /* .jt-citylist-header { */
 /*     position: relative; */

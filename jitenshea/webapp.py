@@ -23,7 +23,8 @@ def check_city(city):
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    body_class = "home"
+    return render_template("index.html", body_class=body_class)
 
 @app.route('/doc/')
 def swagger_ui():
