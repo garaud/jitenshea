@@ -2,7 +2,9 @@
 
 {% block content %}
 
-<h3>{{city|capitalize}} Station #{{station_id}}</h3>
+<div class="header">
+  <h1>{{city|capitalize}} Station #{{station_id}}</h1>
+</div>
 
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
@@ -16,13 +18,12 @@
 
 <div class="container" id="stationSummary" data-city="{{city}}"
      data-station-id="{{station_id}}">
-  <div class="container">
+
+  <h2 id="titlePanel"></h2>
+  <div class="">
     <div class="row">
       <div class="col-md-4">
         <div class="panel panel-primary">
-          <div class="panel-heading">
-            <h4 id="titlePanel"></h4>
-          </div>
           <ul class="list-group">
             <li class="list-group-item" id="id"><b>ID</b>: </li>
             <li class="list-group-item" id="name"><b>Name</b>: </li>
@@ -42,7 +43,7 @@
   <p>Station profiles: transactions mean for each day of the week (resp. hour of
   the day) for a period of 30 days.</p>
 
-  <div class="container">
+  <div>
     <div class="row">
       <div class="col-md-6">
         <h3>Hourly</h3>

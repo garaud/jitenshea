@@ -59,6 +59,10 @@ h1 {
     font-weight: bold;
 }
 
+h2 {
+    margin-top: 20px;
+}
+
 h3 svg {
     margin-right: 10px;
     padding-top: 5px;
