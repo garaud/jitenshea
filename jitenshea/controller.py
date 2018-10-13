@@ -66,33 +66,6 @@ def processing_timeseries(rset):
     return {"data": values}
 
 
-def processing_predictions(rset):
-    """Processing the result of a prediction SQL query
-
-    Parameters
-    ----------
-    rset : sqlalchemy.engine.result.ResultProxy
-        Output of a prediction SQL query
-
-    Returns
-    -------
-    list of dicts
-        Bike and stand prediction for a given time period
-    """
-    if not rset:
-        return []
-    data = [dict(zip(x.keys(), x)) for x in rset]
-    values = []
-    for k, group in groupby(data, lambda x: x['id']):
-        group = list(group)
-        values.append({'id': k,
-                       'name': group[0]['name'],
-                       "ts": [x['timestamp'] for x in group],
-                       'predicted_bikes': [x['nb_bikes'] for x in group],
-                       'predicted_stands': [x['nb_stands'] for x in group]})
-    return {"data": values}
-
-
 def time_window(day, window, backward):
     """Return a TimeWindow
 
@@ -359,7 +332,8 @@ def timeseries(city, station_ids, start, stop):
     return processing_timeseries(rset)
 
 
-def predictions(city, station_ids, start, stop):
+def prediction_timeseries(city, station_ids, start, stop,
+                          values_num, with_current_values, freq='1H'):
     """Get bike availability predictions between `start` and `stop` dates for
     `city` at stations `station_ids`
 
@@ -373,29 +347,58 @@ def predictions(city, station_ids, start, stop):
         Begin of prediction period
     stop : datetime
         End of prediction period
+    values_num : int
+        Number of predict values
+    with_current_values : bool
+        Include the current values?
+    Returns
+    -------
+    list of dict
     """
-    query = ("SELECT T.station_id AS id, "
-             "T.timestamp AS timestamp, "
-             "T.nb_bikes AS nb_bikes, "
-             "T.nb_stands AS nb_stands, "
-             "S.name AS name "
-             "FROM {schema}.{table} AS T "
-             "LEFT JOIN {schema}.{station} AS S "
-             "ON (T.station_id::varchar = S.id::varchar) "
-             "WHERE id IN %(id_list)s "
-             "AND timestamp >= %(start)s AND timestamp < %(stop)s "
-             "ORDER BY id,timestamp"
-             ";").format(schema=city,
-                         table='prediction',
-                         station='station')
+    # get predicted data
+    query = """SELECT T.station_id AS id
+         , T.timestamp AS timestamp
+         , T.nb_bikes AS nb_bikes
+         , S.nb_stations
+         , S.name AS name
+         FROM {city}.prediction AS T
+         LEFT JOIN {city}.station AS S ON (T.station_id::varchar = S.id::varchar)
+         WHERE id IN %(id_list)s
+           AND timestamp >= %(start)s AND timestamp < %(stop)s
+           AND frequency = %(freq)s
+         ORDER BY id,timestamp;""".format(city=city)
     eng = db()
-    rset = eng.execute(query, id_list=tuple(x for x in station_ids),
-                       start=start, stop=stop)
-    return processing_predictions(rset)
+    rset_pred = eng.execute(query, id_list=tuple(x for x in station_ids),
+                            start=start, stop=stop, freq=freq)
+    # current values
+    rset_current = None
+    if with_current_values:
+        query = """select distinct id
+           , timestamp
+           , available_bikes as nb_bikes
+           , S.nb_stations
+           , S.name
+        from {city}.timeseries as T
+        left join {city}.station as S using(id)
+        where id in %(id_list)s
+           AND timestamp >= %(start)s and timestamp < %(stop)s
+        """.format(city=city)
+        rset_current = eng.execute(query, id_list=tuple(x for x in station_ids),
+                                   start=start, stop=stop)
+    pred = [dict(zip(x.keys(), x)) for x in rset_pred]
+    # truncate the nth latest values and add the prediction time
+    for data in pred[-values_num:]:
+        data['at'] = freq
+    current = []
+    if rset_current:
+        current = [dict(zip(x.keys(), x)) for x in rset_current]
+        for data in current:
+            data['at'] = '0'
+    return current + pred[-values_num:]
 
 
 def latest_predictions(city, limit, geojson, freq='1H'):
-    """Get bike availability predictions for a specific city.
+    """Get bike availability predictions for a specific city for a list of stations.
 
     Parameters
     ----------
