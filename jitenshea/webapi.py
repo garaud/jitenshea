@@ -131,6 +131,18 @@ timeseries_parser.add_argument("start", required=True, dest="start", location="a
 timeseries_parser.add_argument("stop", required=True, dest="stop", location="args",
                                help="Stop date YYYY-MM-DDThhmm")
 
+predict_parser = api.parser()
+predict_parser.add_argument("start", required=True, dest="start", location="args",
+                            help="Start date YYYY-MM-DDThhmm")
+predict_parser.add_argument("stop", required=True, dest="stop", location="args",
+                            help="Stop date YYYY-MM-DDThhmm")
+predict_parser.add_argument("current", required=False, type=inputs.boolean, default=False,
+                            dest="current", location="args",
+                            help="With current values?")
+predict_parser.add_argument("predict_values", type=int,
+                            dest="values_num", default=3, location="args",
+                            help="Number of predict values")
+
 hourly_profile_parser = api.parser()
 hourly_profile_parser.add_argument("date", required=True, dest="date", location="args",
                                    help="day of the transactions (YYYY-MM-DD)")
@@ -228,14 +240,17 @@ class CityTimeseriesStation(Resource):
 
 @api.route("/<string:city>/predict/station/<list:ids>")
 class PredictStation(Resource):
-    @api.doc(parser=timeseries_parser,
+    @api.doc(parser=predict_parser,
              description="Bicycle station(s) prediction")
     def get(self, city, ids):
         check_city(city)
-        args = timeseries_parser.parse_args()
+        args = predict_parser.parse_args()
         start = parse_timestamp(args['start'])
         stop = parse_timestamp(args['stop'])
-        rset = controller.predictions(city, ids, start, stop)
+        values_num = args['values_num']
+        with_current_values = args['current']
+        rset = controller.prediction_timeseries(
+            city, ids, start, stop, values_num, with_current_values)
         if not rset:
             api.abort(404, "No such prediction data for id: {} between {} and {}".format(ids, start, stop))
         return jsonify(rset)
