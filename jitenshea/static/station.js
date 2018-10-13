@@ -96,20 +96,15 @@ $(document).ready(function() {
       + "/timeseries/station/" + station_id
       + "?start=" + start + "&stop=" + stop;
   $.get(url, function(content) {
-    var station_name = content.timeseries[0].name;
-    var date = content.timeseries[0].ts;
-    var prediction_date = content.predictions[0].ts;
+    // just a single station
+    var data = content.data[0];
+    var station_name = data.name;
+    var date = data.ts;
     var stands = date.map(function(t, i) {
-      return [Date.parse(t), content.timeseries[0].available_stands[i]];
+      return [Date.parse(t), data.available_stands[i]];
     });
     var bikes = date.map(function(t, i) {
-      return [Date.parse(t), content.timeseries[0].available_bikes[i]];
-    });
-    var predicted_stands = prediction_date.map(function(t, i) {
-      return [Date.parse(t), content.predictions[0].predicted_stands[i]];
-    });
-    var predicted_bikes = prediction_date.map(function(t, i) {
-      return [Date.parse(t), content.predictions[0].predicted_bikes[i]];
+      return [Date.parse(t), data.available_bikes[i]];
     });
     Highcharts.stockChart('stationTimeseries', {
       // use to select the time window
@@ -161,24 +156,94 @@ $(document).ready(function() {
         tooltip: {
           valueDecimals: 1
         }
-      }, {
-        name: "predicted stands",
-        data: predicted_stands,
-        tooltip: {
-          valueDecimals: 1
-        }
-      }, {
-        name: "predicted bikes",
-        data: predicted_bikes,
-        tooltip: {
-          valueDecimals: 1
-        }
       }]
     } );
 
 
   } );
 
+} );
+
+
+// Predictions plot
+$(document).ready(function() {
+  var station_id = document.getElementById("stationPredictions").dataset.stationId;
+  // Only plot seven days.
+  var start = new Date();
+  var stop = new Date();
+  start.setHours(start.getHours() - 1);
+  stop.setHours(stop.getHours() + 1);
+  start = start.toISOString().substring(0, 16);
+  stop = stop.toISOString().substring(0, 16);
+  console.log(start);
+  console.log(stop);
+
+  var url = cityurl("stationPredictions")
+      + "/predict/station/" + station_id
+      + "?start=" + start + "&stop=" + stop + "&current=true";
+  $.get(url, function(data) {
+    var station_name = data[0].name;
+    var prediction = data.filter(function(x) {
+      return x.at === '1H';
+    }).map(function(x) {
+        return [Date.parse(x.timestamp), x.nb_bikes];
+    });
+    var current = data.filter(function(x) {
+      return x.at === '0';
+    }).map(function(x) {
+        return [Date.parse(x.timestamp), x.nb_bikes];
+    });
+    console.log(prediction);
+    Highcharts.stockChart('stationPredictions', {
+      // use to select the time window
+      rangeSelector: {
+        buttons: [{
+          type: 'hour',
+          count: 1,
+          text: '1H'
+        }, {
+          type: 'all',
+          count: 1,
+          text: 'All'
+        }],
+        selected: 0,
+        inputEnabled: false
+      },
+      legend:{
+	align: 'center',
+	verticalAlign: 'top',
+	enabled: true
+      },
+      title: {
+        text: 'Predictions for the station ' + station_name
+      },
+      yAxis: {
+        title: {
+          text: 'Number of items'
+        }
+      },
+      xAxis: {
+        type: "datetime"
+      },
+      time: {
+	useUTC: false
+      },
+      series: [{
+        name: "current",
+        data: current,
+        color: "#66c2a5",
+        tooltip: {
+          valueDecimals: 1
+        }
+      }, {
+        name: "prediction",
+        data: prediction,
+        color: "#fc8d62",
+        tooltip: {
+          valueDecimals: 1
+        }}]
+    } );
+  } );
 } );
 
 
