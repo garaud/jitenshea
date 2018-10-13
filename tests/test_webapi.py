@@ -114,17 +114,34 @@ def test_api_clustering_centroids(client):
 
 
 def test_api_prediction(client):
-    stop = datetime.today() - timedelta(seconds=3600)
-    start = stop - timedelta(seconds=3600)
+    stop = datetime.today() + timedelta(hours=1)
+    start = stop - timedelta(hours=2)
     params = {'start': start.strftime(ISO_DATETIME),
               'stop': stop.strftime(ISO_DATETIME)}
+    print(params)
     resp = client.get('/api/bordeaux/predict/station/22',
                       query_string=params)
     assert resp.status_code == 200
-    data = resp.get_json()['data']
-    assert len(data) == 1
-    assert 'predicted_stands' in data[0]
-    assert 'predicted_bikes' in data[0]
+    data = resp.get_json()
+    # 3 values by default
+    assert len(data) == 3
+    assert 'nb_bikes' in data[0]
+    assert data[0]['at'] == '1H'
+
+
+def test_api_prediction_with_current_values(client):
+    stop = datetime.today() + timedelta(hours=1)
+    start = stop - timedelta(hours=2)
+    params = {'start': start.strftime(ISO_DATETIME),
+              'stop': stop.strftime(ISO_DATETIME),
+              'current': True}
+    print(params)
+    resp = client.get('/api/bordeaux/predict/station/22',
+                      query_string=params)
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) > 3
+    assert 'nb_bikes' in data[0]
 
 
 def test_api_latest_prediction(client):
