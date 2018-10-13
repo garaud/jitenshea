@@ -1,0 +1,26 @@
+{
+  "name": "jitenshea",
+  "version": "0.1",
+  "description": "Bicycle-sharing data analysis",
+  "keywords": [
+    "bicycle",
+    "GIS",
+    "data"
+  ],
+  "repository": "git@github.com:garaud/jitenshea.git",
+  "author": "Damien Garaud <damien.garaud@gmail.com>",
+  "license": "BSD",
+  "dependencies": {
+    "@turf/turf": "^5.1.6",
+    "bootstrap": "^4.1.3",
+    "d3-color": "^1.2.3",
+    "d3-interpolate": "^1.3.2",
+    "d3-scale-chromatic": "^1.3.3",
+    "datatables-package": "^1.0.3",
+    "feather-icons": "^4.7.3",
+    "highcharts": "^6.1.4",
+    "jquery": "^3.3.1",
+    "leaflet": "^1.3.4",
+    "swagger-ui": "^3.19.3"
+  }
+}
