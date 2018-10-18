@@ -6,7 +6,7 @@
   <title>API documentation</title>
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Source+Code+Pro:300,600|Titillium+Web:400,600,700" rel="stylesheet">
   <link media="screen" rel="stylesheet" type="text/css"
-    href="{{ url_for('static', filename='bower/swagger-ui/dist/swagger-ui.css') }}" />
+    href="{{ url_for('static', filename='node_modules/swagger-ui-dist/swagger-ui.css') }}" />
   <style>
     html
     {
@@ -66,10 +66,12 @@
 
 <div id="swagger-ui"></div>
 
+<script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='node_modules/feather-icons/dist/feather.min.js') }}" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='settings.js') }}" type="text/javascript"></script>
 <script src="{{ url_for('static', filename='app.js') }}" type="text/javascript"></script>
-<script src="{{ url_for('static', filename='bower/swagger-ui/dist/swagger-ui-bundle.js') }}" type="text/javascript"></script>
-<script src="{{ url_for('static', filename='bower/swagger-ui/dist/swagger-ui-standalone-preset.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='node_modules/swagger-ui-dist/swagger-ui-bundle.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='node_modules/swagger-ui-dist/swagger-ui-standalone-preset.js') }}" type="text/javascript"></script>
 
 <script>
 window.onload = function() {
