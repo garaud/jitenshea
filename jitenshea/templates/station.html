@@ -9,6 +9,7 @@
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item" aria-current="page"><a href="{{url_for('index')}}">Home</a></li>
+    <li class="breadcrumb-item" aria-current="page"><a href="{{url_for('citylist')}}">Cities</a></li>
     <li class="breadcrumb-item" aria-current="page">
       <a href="{{url_for('city_view', city=city)}}">{{city|capitalize}}</a></li>
     <li class="breadcrumb-item active" aria-current="page">Station {{station_id}}</li>
