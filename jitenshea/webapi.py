@@ -177,6 +177,18 @@ class CityStationList(Resource):
         args = station_list_parser.parse_args()
         limit = args['limit']
         geojson = args['geojson']
+        return jsonify(controller.latest_availability(city, limit, geojson))
+
+
+@api.route("/<string:city>/infostation")
+class CityStationList(Resource):
+    @api.doc(parser=station_list_parser,
+             description="Bicycle-sharing stations")
+    def get(self, city):
+        check_city(city)
+        args = station_list_parser.parse_args()
+        limit = args['limit']
+        geojson = args['geojson']
         return jsonify(controller.stations(city, limit, geojson))
 
 
