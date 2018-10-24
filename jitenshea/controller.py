@@ -60,6 +60,7 @@ def processing_timeseries(rset):
         group = list(group)
         values.append({'id': k,
                        'name': group[0]['name'],
+                       'nb_stands': group[0]['nb_stands'],
                        "ts": [x['timestamp'] for x in group],
                        'available_bikes': [x['available_bikes'] for x in group],
                        'available_stands': [x['available_stands'] for x in group]})
@@ -323,6 +324,7 @@ def timeseries(city, station_ids, start, stop):
     """
     query = """SELECT T.*
       ,S.name as name
+      ,S.nb_stations as nb_stands
     FROM {schema}.{table} AS T
     LEFT JOIN {schema}.{station} AS S using(id)
     WHERE id IN %(id_list)s AND timestamp >= %(start)s AND timestamp < %(stop)s
@@ -363,7 +365,7 @@ def prediction_timeseries(city, station_ids, start, stop,
     query = """SELECT T.station_id AS id
          , T.timestamp AS timestamp
          , T.nb_bikes AS nb_bikes
-         , S.nb_stations
+         , S.nb_stations as nb_stands
          , S.name AS name
          FROM {city}.prediction AS T
          LEFT JOIN {city}.station AS S ON (T.station_id::varchar = S.id::varchar)
@@ -380,7 +382,7 @@ def prediction_timeseries(city, station_ids, start, stop,
         query = """select distinct id
            , timestamp
            , available_bikes as nb_bikes
-           , S.nb_stations
+           , S.nb_stations as nb_stands
            , S.name
         from {city}.timeseries as T
         left join {city}.station as S using(id)
@@ -479,7 +481,7 @@ def latest_predictions(city, limit, geojson, freq='1H'):
       ,P.timestamp
       ,P.nb_bikes
       ,S.name
-      ,S.nb_stations
+      ,S.nb_stations as nb_stands
       ,st_x(S.geom) as x
       ,st_y(S.geom) as y
     from latest as P
@@ -494,7 +496,7 @@ def latest_predictions(city, limit, geojson, freq='1H'):
     result = [dict(zip(keys, row)) for row in rset]
     predict_date = max(x['timestamp'] for x in result)
     if geojson:
-        return station_geojson(result, feature_list=['id', 'name', 'timestamp', 'nb_bikes', 'nb_stations'])
+        return station_geojson(result, feature_list=['id', 'name', 'timestamp', 'nb_bikes', 'nb_stands'])
     return {"data": result, "date": predict_date}
 
 

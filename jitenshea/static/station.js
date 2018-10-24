@@ -11,7 +11,7 @@ $(document).ready(function() {
     $("#titlePanel").append("#" + station.id + " " + station.name + " in " + station.city);
     $("#id").append(station.id);
     $("#name").append(station.name);
-    $("#nbBikes").append(station.nb_bikes);
+    $("#nbStands").append(station.nb_stands);
     $("#address").append(station.address);
     $("#city").append(station.city);
   } );
@@ -183,6 +183,7 @@ $(document).ready(function() {
       + "?start=" + start + "&stop=" + stop + "&current=true";
   $.get(url, function(data) {
     var station_name = data[0].name;
+    var nb_stands = data[0].nb_stands;
     var prediction = data.filter(function(x) {
       return x.at === '1H';
     }).map(function(x) {
