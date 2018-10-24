@@ -15,7 +15,7 @@ $(document).ready(function() {
     paging:         false,
     processing: true,
     ajax: {
-      url: cityurl("citytable") + "/station?limit=600"
+      url: cityurl("citytable") + "/infostation?limit=600"
     },
     columnDefs: [ {
       "targets": 1,
@@ -28,7 +28,7 @@ $(document).ready(function() {
       { "data": "id" },
       { "data": "name"},
       { "data": "city"},
-      { "data": "nb_bikes"},
+      { "data": "nb_stands"},
       { "data": "address"}
     ]
   } );
@@ -43,12 +43,15 @@ function stationsMap(map, data) {
   OSM_Mapnik.addTo(map);
   var centroid = turf.center(data);
   map.setView([centroid.geometry.coordinates[1],
-               centroid.geometry.coordinates[0]], 12);
+               centroid.geometry.coordinates[0]], 13);
   L.geoJSON(data, {
     pointToLayer: function(geoJsonPoint, latlng) {
       return L.circleMarker(latlng, {radius: 5})
         .bindPopup("<ul><li><b>ID</b>: " + geoJsonPoint.properties.id
-                   + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name + "</li></ul>")
+                   + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name
+                   + "</li><li><b>Stands</b>: " + geoJsonPoint.properties.nb_stands
+                   + "</li><li><b>Bikes</b>: " + geoJsonPoint.properties.nb_bikes
+                   + "</li><li><b>Update</b>: " + geoJsonPoint.properties.timestamp + "</li></ul>")
         .on('mouseover', function(e) {
           this.openPopup();
         })

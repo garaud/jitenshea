@@ -155,11 +155,16 @@ def cities():
 def stations(city, limit, geojson):
     """List of bicycle stations
 
+    Parameters
+    ----------
     city : string
     limit : int
     geojson : boolean
 
-    Return a list of dict, one dict by bicycle station
+    Returns
+    -------
+    list
+        a list of dict, one dict by bicycle station
     """
     query = _query_stations(city, limit)
     eng = db()
@@ -168,7 +173,7 @@ def stations(city, limit, geojson):
     result = [dict(zip(keys, row)) for row in rset]
     if geojson:
         return station_geojson(result,
-                               feature_list=['id', 'name', 'address', 'city', 'nb_bikes'])
+                               feature_list=['id', 'name', 'address', 'city', 'nb_stands'])
     return {"data": result}
 
 
@@ -209,13 +214,12 @@ def _query_stations(city, limit=20):
       ,name
       ,address
       ,city
-      ,nb_stations as nb_bikes
+      ,nb_stations as nb_stands
       ,st_x(geom) as x
       ,st_y(geom) as y
-    FROM {schema}.{table}
+    FROM {schema}.station
     LIMIT {limit}
     """.format(schema=city,
-               table='station',
                limit=limit)
 
 
@@ -397,8 +401,56 @@ def prediction_timeseries(city, station_ids, start, stop,
     return current + pred[-values_num:]
 
 
+def latest_availability(city, limit, geojson):
+    """Get bike the latest bikes availability for a specific city.
+
+    Parameters
+    ----------
+    city : str
+        Name of the city
+    limit : int
+        Max number of stations
+    geosjon : bool
+        Data in geojson?
+    freq : str
+        Time horizon
+
+    Returns
+    -------
+    dict
+    """
+    query = """with latest as (
+      select id
+        ,timestamp
+        ,available_bikes as nb_bikes
+        ,rank() over (partition by id order by timestamp desc) as rank
+      from {city}.timeseries
+    )
+    select P.id
+      ,P.timestamp
+      ,P.nb_bikes
+      ,S.name
+      ,S.nb_stations as nb_stands
+      ,st_x(S.geom) as x
+      ,st_y(S.geom) as y
+    from latest as P
+    join {city}.station as S using(id)
+    where P.rank=1
+    order by id
+    limit %(limit)s
+    """.format(city=city)
+    eng = db()
+    rset = eng.execute(query, limit=limit)
+    keys = rset.keys()
+    result = [dict(zip(keys, row)) for row in rset]
+    latest_date = max(x['timestamp'] for x in result)
+    if geojson:
+        return station_geojson(result, feature_list=['id', 'name', 'timestamp', 'nb_bikes', 'nb_stands'])
+    return {"data": result, "date": latest_date}
+
+
 def latest_predictions(city, limit, geojson, freq='1H'):
-    """Get bike availability predictions for a specific city for a list of stations.
+    """Get bike availability predictions for a specific city.
 
     Parameters
     ----------
