@@ -8,10 +8,13 @@ Jitensha (bicycle) + Shea (share) = Jitenshea
 
 Analyze bikes sharing station data some cities where there are Open Data.
 
-You have two parts in this project:
+You have three parts in this project:
 
 * a data pipeline and data processing with [luigi](http://luigi.readthedocs.io/)
   to get, transform and store data
+
+* Some statistics and Machine Learning to analyze the timeseries and predict the
+  bikes availability for each station.
 
 * Web application to get and visualize some data through a REST API
 
@@ -29,6 +32,8 @@ to gather the bicycle-sharing stations data. Another one is called every day to
 aggregate some data. You can use [cron-job](https://cron-job.org/en/) to carry
 out this stuff.
 
+Contributions for other cities are welcomed! e.g. Nantes, Paris, Marseille, etc.
+
 ## Configuration
 
 A configuration file sample can be found at the root directory
@@ -37,26 +42,19 @@ A configuration file sample can be found at the root directory
 
 It is used for the database access, some tokens for API, etc.
 
-For the wep application, you can launch `bower` to install Javascript and CSS dependencies.
-
 ## Requirements
 
 PostgreSQL database with PostGIS. You must have the `shp2pgsql` command.
 
-* Python 3.6
-* pandas
-* requests
-* luigi
-* sh
-* psycopg2
-* sqlalchemy
-* flask-restplus
-* daiquiri
+All **Python** requirements are specified in the `setup.py` file.
 
-See the `conda_env.sh` script to create a conda environment with the dependencies.
+Create a new virtualenv, then do `pip install .` in the project root directory.
 
-**Note**: flask-restplus and daiquiri should be install via `pip`.
+For **Javascript** and **CSS** dependencies, you have to install `yarn` then launch
+`yarn install`.
 
-## Tests
 
-Install the extras dependencies, e.g. `pip install -e ."[dev]"`, and run `pytest`.
+## Development
+
+* Install the extras dependencies, e.g. `pip install -e ."[dev]"`.
+* Launch test with  `pytest`.
