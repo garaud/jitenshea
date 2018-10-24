@@ -106,7 +106,6 @@ function getStationsLayer(city, prediction) {
   }
   var key = "map" + prefixurl + "/" + city;
   var geostations = sessionStorage.getItem(key);
-  force_request = true;
   if (force_request || (geostations == null)) {
     $.get(cityurl("stationMap") + prefixurl + "?geojson=true&limit=600", function(data) {
       console.log("stations geodata GET request key " + key);
