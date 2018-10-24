@@ -39,15 +39,47 @@ def test_api_city_list(client):
     assert expected == content['data']
 
 
+def test_api_city_info_stations(client):
+    resp = client.get('/api/bordeaux/infostation', query_string={'limit': 10})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert 10 == len(data['data'])
+    resp = client.get('/api/lyon/infostation', query_string={'limit': 5})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert 5 == len(data['data'])
+    assert ("address", "city", "id", "name", "nb_stands", "x", "y") == tuple(data['data'][0].keys())
+
+
 def test_api_city_stations(client):
     resp = client.get('/api/bordeaux/station', query_string={'limit': 10})
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert 10 == len(data['data'])
+    assert 'date' in data
+    station = data['data'][0]
+    assert ("id", "name", "nb_bikes", "nb_stands", "timestamp", "x", "y") == tuple(station.keys())
     resp = client.get('/api/lyon/station', query_string={'limit': 5})
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert 5 == len(data['data'])
+    assert 'date' in data
+    station = data['data'][0]
+    assert ("id", "name", "nb_bikes", "nb_stands", "timestamp", "x", "y") == tuple(station.keys())
+
+
+def test_api_city_map_stations(client):
+    """Data in GeoJSON
+    """
+    resp = client.get('/api/bordeaux/station', query_string={'limit': 10,
+                                                             'geojson': True})
+    assert resp.status_code == 200
+    data = json.loads(resp.data)
+    assert data['type'] == 'FeatureCollection'
+    assert 10 == len(data['features'])
+    station = data['features'][0]
+    assert station['geometry']['type'] == 'Point'
+    assert tuple(station['properties'].keys()) == ("id", "name", "nb_bikes", "nb_stands", "timestamp")
 
 
 def test_api_specific_stations(client):
