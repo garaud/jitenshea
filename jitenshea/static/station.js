@@ -194,7 +194,6 @@ $(document).ready(function() {
     }).map(function(x) {
         return [Date.parse(x.timestamp), x.nb_bikes];
     });
-    console.log(prediction);
     Highcharts.stockChart('stationPredictions', {
       // use to select the time window
       rangeSelector: {
@@ -221,7 +220,9 @@ $(document).ready(function() {
       yAxis: {
         title: {
           text: 'Number of items'
-        }
+        },
+        min: 0,
+        max: nb_stands
       },
       xAxis: {
         type: "datetime"
@@ -258,8 +259,8 @@ $(document).ready(function() {
   var url = cityurl("stationDailyTransactions") + "/daily/station/" + station_id
       + "?date=" + day + "&window=" + window;
   $.get(url, function(content) {
-
     var station_name = content.data[0].name;
+    var nb_stands = content.data[0].nb_stands;
     var date = content.data[0].date;
     var data = date.map(function(t, i) {
       return [Date.parse(t), content.data[0].value[i]];
@@ -274,7 +275,9 @@ $(document).ready(function() {
       yAxis: {
         title: {
           text: 'Daily Transactions'
-        }
+        },
+        min: 0,
+        max: nb_stands
       },
       xAxis: {
         type: "datetime",

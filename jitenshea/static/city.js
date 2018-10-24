@@ -35,7 +35,7 @@ $(document).ready(function() {
 } );
 
 
-function stationsMap(map, data) {
+function stationsMap(map, city, data) {
   var OSM_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -46,7 +46,11 @@ function stationsMap(map, data) {
                centroid.geometry.coordinates[0]], 13);
   L.geoJSON(data, {
     pointToLayer: function(geoJsonPoint, latlng) {
-      return L.circleMarker(latlng, {radius: 5})
+      return L.circleMarker(latlng, {
+        radius: 5,
+        stroke: true,
+        color: d3.interpolateRdYlGn(geoJsonPoint.properties.nb_bikes / geoJsonPoint.properties.nb_stands)
+       })
         .bindPopup("<ul><li><b>ID</b>: " + geoJsonPoint.properties.id
                    + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name
                    + "</li><li><b>Stands</b>: " + geoJsonPoint.properties.nb_stands
@@ -57,7 +61,10 @@ function stationsMap(map, data) {
         })
         .on('mouseout', function(e) {
           this.closePopup();
-        });
+        })
+      .on('click', function(e) {
+        window.location.assign(city + "/" + geoJsonPoint.properties.id);
+      });
     }
   }).addTo(map);
 };
@@ -69,16 +76,27 @@ function stationsMap(map, data) {
 $(document).ready(function() {
   var station_map = L.map("stationMap");
   var city = document.getElementById("stationMap").dataset.city;
-  var geostations = sessionStorage.getItem(city);
-  if (geostations == null) {
+  var key = "map" + city;
+  var last_update = sessionStorage.getItem("when" + city);
+  if (last_update == null) {
+    last_update = new Date();
+  } else {
+    last_update = new Date(last_update);
+  }
+  var now = new Date();
+  // Force a new request if the last update > 5 min.
+  var force_request = (now - last_update) / (60 * 1000.) > 5;
+  var geostations = sessionStorage.getItem(key);
+  if (force_request || (geostations == null)) {
     $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
       console.log("stations geodata GET request in " + city);
-      stationsMap(station_map, data);
-      sessionStorage.setItem(city, JSON.stringify(data));
+      stationsMap(station_map, city, data);
+      sessionStorage.setItem("when" + city, now.toISOString());
+      sessionStorage.setItem(key, JSON.stringify(data));
     } );
   } else {
     console.log("station geodata from sesssionStorage in " + city);
-    stationsMap(station_map, JSON.parse(geostations));
+    stationsMap(station_map, city, JSON.parse(geostations));
   }
 } );
 
