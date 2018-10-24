@@ -13,27 +13,28 @@ from subprocess import run, DEVNULL, PIPE, CalledProcessError
 from jitenshea import config
 
 
-cities = ['bordeaux', 'lyon']
+cities = ["bordeaux", "lyon"]
 
 psql_cmd = ["PGOPTIONS='--client-min-messages=warning'"]
-configdb = config['database']
+configdb = config["database"]
 
-if 'password' in configdb and configdb.get('password', None):
-    psql_cmd.append('PGPASSWORD="{}"'.format(configdb['password']))
+if "password" in configdb and configdb.get("password", None):
+    psql_cmd.append('PGPASSWORD="{}"'.format(configdb["password"]))
 
-psql_cmd.append('psql')
-psql_cmd.append('-v ON_ERROR_STOP=1')
-psql_cmd.extend([
-    '{} {}'.format(opt, configdb[cfg])
-    for opt, cfg in
-    (
-        ('-h', 'host'),
-        ('-p', 'port'),
-        ('-d', 'dbname'),
-        ('-U', 'user'),
-    )
-    if cfg in configdb and configdb.get(cfg, None)
-])
+psql_cmd.append("psql")
+psql_cmd.append("-v ON_ERROR_STOP=1")
+psql_cmd.extend(
+    [
+        "{} {}".format(opt, configdb[cfg])
+        for opt, cfg in (
+            ("-h", "host"),
+            ("-p", "port"),
+            ("-d", "dbname"),
+            ("-U", "user"),
+        )
+        if cfg in configdb and configdb.get(cfg, None)
+    ]
+)
 
 # Query to shift all tables with timestamps and dates.
 # It "updates" the data with recent dates. Usefull to test the Web API.
@@ -82,15 +83,17 @@ def execute_sql(query, city):
     """
     query = query.format(city=city)
     try:
-        run(' '.join(psql_cmd),
+        run(
+            " ".join(psql_cmd),
             input=query,
             check=True,
             shell=True,
             stdout=DEVNULL,
             stderr=PIPE,
-            encoding='UTF-8')
+            encoding="UTF-8",
+        )
     except CalledProcessError as exc:
-        print('ERROR on', city, exc.stderr)
+        print("ERROR on", city, exc.stderr)
         raise exc
 
 
@@ -100,5 +103,5 @@ def main():
         execute_sql(query, city)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
