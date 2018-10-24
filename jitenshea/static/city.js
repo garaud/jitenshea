@@ -34,17 +34,9 @@ $(document).ready(function() {
   } );
 } );
 
-
-function stationsMap(map, city, data) {
-  var OSM_Mapnik = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  });
-  OSM_Mapnik.addTo(map);
-  var centroid = turf.center(data);
-  map.setView([centroid.geometry.coordinates[1],
-               centroid.geometry.coordinates[0]], 13);
-  L.geoJSON(data, {
+// return a leaflet layer
+function prepareDataMap(city, data) {
+  return L.geoJSON(data, {
     pointToLayer: function(geoJsonPoint, latlng) {
       return L.circleMarker(latlng, {
         radius: 5,
@@ -55,7 +47,7 @@ function stationsMap(map, city, data) {
                    + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name
                    + "</li><li><b>Stands</b>: " + geoJsonPoint.properties.nb_stands
                    + "</li><li><b>Bikes</b>: " + geoJsonPoint.properties.nb_bikes
-                   + "</li><li><b>Update</b>: " + geoJsonPoint.properties.timestamp + "</li></ul>")
+                   + "</li><li><b>At</b> " + geoJsonPoint.properties.timestamp + "</li></ul>")
         .on('mouseover', function(e) {
           this.openPopup();
         })
@@ -66,7 +58,7 @@ function stationsMap(map, city, data) {
         window.location.assign(city + "/" + geoJsonPoint.properties.id);
       });
     }
-  }).addTo(map);
+  });
 };
 
 // Map with all stations with Leaflet
@@ -74,9 +66,30 @@ function stationsMap(map, city, data) {
 //  - is it possible to set a bbox (computed by turjs) instead of a zoom in the
 //    'setView' function.
 $(document).ready(function() {
-  var station_map = L.map("stationMap");
+  var tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  });
   var city = document.getElementById("stationMap").dataset.city;
-  var key = "map" + city;
+  var current = getStationsLayer(city, false);
+  var prediction = getStationsLayer(city, true);
+  var station_map = L.map("stationMap", {
+    layers: [tile, current.layer],
+    center: [current.centroid.geometry.coordinates[1],
+             current.centroid.geometry.coordinates[0]],
+    zoom: 13
+  });
+  var overlaysMap = {
+    "Current": current.layer,
+    "Prediction 1H": prediction.layer
+  };
+  // current.layer.addTo(station_map);
+  // prediction.layer.addTo(station_map);
+  L.control.layers(null, overlaysMap).addTo(station_map);
+});
+
+
+function getStationsLayer(city, prediction) {
   var last_update = sessionStorage.getItem("when" + city);
   if (last_update == null) {
     last_update = new Date();
@@ -86,19 +99,28 @@ $(document).ready(function() {
   var now = new Date();
   // Force a new request if the last update > 5 min.
   var force_request = (now - last_update) / (60 * 1000.) > 5;
+  if (prediction) {
+    var prefixurl = "/predict/station";
+  } else {
+    var prefixurl = "/station";
+  }
+  var key = "map" + prefixurl + "/" + city;
   var geostations = sessionStorage.getItem(key);
+  force_request = true;
   if (force_request || (geostations == null)) {
-    $.get(cityurl("stationMap") + "/station?geojson=true&limit=600", function(data) {
-      console.log("stations geodata GET request in " + city);
-      stationsMap(station_map, city, data);
+    $.get(cityurl("stationMap") + prefixurl + "?geojson=true&limit=600", function(data) {
+      console.log("stations geodata GET request key " + key);
       sessionStorage.setItem("when" + city, now.toISOString());
       sessionStorage.setItem(key, JSON.stringify(data));
     } );
-  } else {
-    console.log("station geodata from sesssionStorage in " + city);
-    stationsMap(station_map, city, JSON.parse(geostations));
   }
-} );
+  console.log("station geodata from sesssionStorage key " + key);
+  var data = JSON.parse(sessionStorage.getItem(key));
+  console.log(data);
+  return {"layer": prepareDataMap(city, data),
+          "centroid": turf.center(data) };
+};
+
 
 
 // Barplot of most important transactions (day before today)
