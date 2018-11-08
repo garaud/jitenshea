@@ -7,7 +7,7 @@
 import daiquiri
 
 from itertools import groupby
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import namedtuple
 
 import pandas as pd
@@ -427,6 +427,7 @@ def latest_availability(city, limit, geojson):
         ,available_bikes as nb_bikes
         ,rank() over (partition by id order by timestamp desc) as rank
       from {city}.timeseries
+      where timestamp >= %(min_date)s
     )
     select P.id
       ,P.timestamp
@@ -442,7 +443,9 @@ def latest_availability(city, limit, geojson):
     limit %(limit)s
     """.format(city=city)
     eng = db()
-    rset = eng.execute(query, limit=limit)
+    # avoid getting the full history
+    min_date = datetime.now() - timedelta(days=2)
+    rset = eng.execute(query, min_date=min_date, limit=limit)
     keys = rset.keys()
     result = [dict(zip(keys, row)) for row in rset]
     latest_date = max(x['timestamp'] for x in result)
@@ -476,6 +479,7 @@ def latest_predictions(city, limit, geojson, freq='1H'):
         ,rank() over (partition by station_id order by timestamp desc) as rank
       from {city}.prediction
       where frequency=%(freq)s
+         and timestamp >= %(min_date)s
     )
     select P.id
       ,P.timestamp
@@ -491,7 +495,9 @@ def latest_predictions(city, limit, geojson, freq='1H'):
     limit %(limit)s
     """.format(city=city)
     eng = db()
-    rset = eng.execute(query, freq=freq, limit=limit)
+    # avoid getting the full history
+    min_date = datetime.now() - timedelta(days=2)
+    rset = eng.execute(query, freq=freq, min_date=min_date, limit=limit)
     keys = rset.keys()
     result = [dict(zip(keys, row)) for row in rset]
     predict_date = max(x['timestamp'] for x in result)
