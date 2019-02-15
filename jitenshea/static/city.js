@@ -34,31 +34,27 @@ $(document).ready(function() {
   } );
 } );
 
-// return a leaflet layer
-function prepareDataMap(city, data) {
-  return L.geoJSON(data, {
-    pointToLayer: function(geoJsonPoint, latlng) {
-      return L.circleMarker(latlng, {
-        radius: 5,
-        stroke: true,
-        color: d3.interpolateRdYlGn(geoJsonPoint.properties.nb_bikes / geoJsonPoint.properties.nb_stands)
-       })
-        .bindPopup("<ul><li><b>ID</b>: " + geoJsonPoint.properties.id
-                   + "</li><li><b>Name</b>: " + geoJsonPoint.properties.name
-                   + "</li><li><b>Stands</b>: " + geoJsonPoint.properties.nb_stands
-                   + "</li><li><b>Bikes</b>: " + geoJsonPoint.properties.nb_bikes
-                   + "</li><li><b>At</b> " + geoJsonPoint.properties.timestamp + "</li></ul>")
-        .on('mouseover', function(e) {
-          this.openPopup();
-        })
-        .on('mouseout', function(e) {
-          this.closePopup();
-        })
-      .on('click', function(e) {
-        window.location.assign(city + "/" + geoJsonPoint.properties.id);
-      });
-    }
-  });
+
+function pointToLayer(data, coords) {
+  return L.circleMarker(coords, {
+    radius: 5,
+    stroke: true,
+    color: d3.interpolateRdYlGn(data.properties.nb_bikes / data.properties.nb_stands)
+  })
+    .bindPopup("<ul><li><b>ID</b>: " + data.properties.id
+               + "</li><li><b>Name</b>: " + data.properties.name
+               + "</li><li><b>Stands</b>: " + data.properties.nb_stands
+               + "</li><li><b>Bikes</b>: " + data.properties.nb_bikes
+               + "</li><li><b>At</b> " + data.properties.timestamp + "</li></ul>")
+    .on('mouseover', function(e) {
+      this.openPopup();
+    })
+    .on('mouseout', function(e) {
+      this.closePopup();
+    })
+    .on('click', function(e) {
+      window.location.assign(city + "/" + data.properties.id);
+    });
 };
 
 // Map with all stations with Leaflet
@@ -71,54 +67,45 @@ $(document).ready(function() {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
   var city = document.getElementById("stationMap").dataset.city;
-  var current = getStationsLayer(city, false);
-  var prediction = getStationsLayer(city, true);
-  var station_map = L.map("stationMap", {
-    layers: [tile, current.layer],
-    center: [current.centroid.geometry.coordinates[1],
-             current.centroid.geometry.coordinates[0]],
-    zoom: 13
-  });
-  var overlaysMap = {
-    "Current": current.layer,
-    "Prediction 1H": prediction.layer
+  var map = L.map("stationMap");
+
+  var infoLayer = L.geoJSON(null, {
+    onEachFeature: function (feature, layer) {
+      layer.bindPopup(feature.properties.name);
+    }
+  }).addTo(map);
+
+  var currentLayer = L.geoJSON(null, {
+    pointToLayer: pointToLayer
+  }).addTo(map);
+
+  var predictionLayer = L.geoJSON(null, {
+    pointToLayer: pointToLayer
+  }).addTo(map);
+
+  var baseMaps = {
+    "info": infoLayer,
+    "current": currentLayer,
+    "prediction": predictionLayer
   };
-  // current.layer.addTo(station_map);
-  // prediction.layer.addTo(station_map);
-  L.control.layers(null, overlaysMap).addTo(station_map);
+
+  tile.addTo(map);
+  L.control.layers(baseMaps).addTo(map);
+
+  $.getJSON(API_URL + "/" + city + "/station?geojson=true", function(data) {
+    currentLayer.addData(data);
+    // map.fitBounds(currentLayer.getBounds())
+  });
+
+  $.getJSON(API_URL + "/" + city + "/predict/station?geojson=true", function(data) {
+    predictionLayer.addData(data);
+  });
+
+  $.getJSON(API_URL + "/" + city + "/infostation?geojson=true", function(data) {
+    infoLayer.addData(data);
+    map.fitBounds(infoLayer.getBounds())
+  });
 });
-
-
-function getStationsLayer(city, prediction) {
-  var last_update = sessionStorage.getItem("when" + city);
-  if (last_update == null) {
-    last_update = new Date();
-  } else {
-    last_update = new Date(last_update);
-  }
-  var now = new Date();
-  // Force a new request if the last update > 5 min.
-  var force_request = (now - last_update) / (60 * 1000.) > 5;
-  if (prediction) {
-    var prefixurl = "/predict/station";
-  } else {
-    var prefixurl = "/station";
-  }
-  var key = "map" + prefixurl + "/" + city;
-  var geostations = sessionStorage.getItem(key);
-  if (force_request || (geostations == null)) {
-    $.get(cityurl("stationMap") + prefixurl + "?geojson=true&limit=600", function(data) {
-      console.log("stations geodata GET request key " + key);
-      sessionStorage.setItem("when" + city, now.toISOString());
-      sessionStorage.setItem(key, JSON.stringify(data));
-    } );
-  }
-  console.log("station geodata from sesssionStorage key " + key);
-  var data = JSON.parse(sessionStorage.getItem(key));
-  console.log(data);
-  return {"layer": prepareDataMap(city, data),
-          "centroid": turf.center(data) };
-};
 
 
 
