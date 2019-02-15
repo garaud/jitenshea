@@ -6,9 +6,10 @@ import setuptools
 with open("README.md") as fobj:
     LONG_DESCRIPTION = fobj.read()
 
-INSTALL_REQUIRES = ["pandas", "requests", "psycopg2-binary", "luigi", 'sqlalchemy',
-                    'lxml', 'xgboost', 'daiquiri', 'Flask==1.0.2', 'flask-restplus==0.12.1',
-                    'sh', 'seaborn', 'scikit-learn', 'tables']
+INSTALL_REQUIRES = ["luigi", "numpy", "pandas", "requests", "psycopg2-binary",
+                    'sqlalchemy', 'lxml', 'xgboost', 'daiquiri', 'Flask==1.0.2',
+                    'flask-restplus==0.12.1', 'sh', 'seaborn', 'scikit-learn',
+                    'tables']
 
 
 setuptools.setup(
@@ -31,7 +32,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ]
 )
