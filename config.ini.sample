@@ -1,3 +1,6 @@
+[main]
+datadir = datarepo
+
 [database]
 dbname = jitenshea
 user = dag

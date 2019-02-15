@@ -38,7 +38,7 @@ from jitenshea.stats import (compute_clusters, train_prediction_model,
 
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
-DATADIR = 'datarepo'
+DATADIR = config["main"]["datadir"]
 
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
 BORDEAUX_BIKEAVAILABILITY_URL = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_VCUB_P'

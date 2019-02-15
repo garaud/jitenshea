@@ -18,7 +18,7 @@ from jitenshea import config
 # from jitenshea.iodb import db
 
 
-DATADIR = 'datarepo/weather'
+DATADIR = os.path.join(config["main"]["datadir"], 'weather')
 
 OPENWEATHER_URL = 'http://api.openweathermap.org/data/2.5'
 
