@@ -181,7 +181,7 @@ class CityStationList(Resource):
 
 
 @api.route("/<string:city>/infostation")
-class CityStationList(Resource):
+class CityInfoStationList(Resource):
     @api.doc(parser=station_list_parser,
              description="Bicycle-sharing stations")
     def get(self, city):
