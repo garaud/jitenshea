@@ -1,6 +1,9 @@
 # Jitenshea: bicycle-sharing data analysis
 
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+ [![License:
+ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+![logo](./images/jitenshea-logo.png)
 
 In Japanese:
 
@@ -18,7 +21,7 @@ You have three parts in this project:
 
 * Web application to get and visualize some data through a REST API
 
-![screenshot](./webapp-screenshot.png)
+![screenshot](./images/webapp-screenshot.png)
 
 ## Data
 
@@ -58,3 +61,7 @@ For **Javascript** and **CSS** dependencies, you have to install `yarn` then lau
 
 * Install the extras dependencies, e.g. `pip install -e ."[dev]"`.
 * Launch test with  `pytest`.
+
+## Logo
+
+Logo was designed by [Sylvain](https://github.com/sylvainbeo). Thanks to him!
