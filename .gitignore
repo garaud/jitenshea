@@ -2,3 +2,7 @@
 *~
 /jitenshea/static/bower/*
 /jitenshea/static/node_modules/*
+*.egg-info
+node_modules
+.pytest_cache
+datarepo
