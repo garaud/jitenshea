@@ -14,6 +14,8 @@ Supported cities:
 import os
 import json
 import zipfile
+import ssl
+from urllib3.poolmanager import PoolManager
 from datetime import datetime as dt
 from datetime import date, timedelta
 
@@ -24,6 +26,7 @@ import pandas as pd
 import sh
 
 import requests
+from requests.adapters import HTTPAdapter
 
 import luigi
 from luigi.contrib.postgres import CopyToTable, PostgresQuery
@@ -45,6 +48,15 @@ BORDEAUX_BIKEAVAILABILITY_URL = 'https://data.bordeaux-metropole.fr/wfs?service=
 
 LYON_STATION_URL = 'https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov'
 LYON_BIKEAVAILABILITY_URL = 'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json'
+
+
+class TLSv1HttpAdapter(HTTPAdapter):
+    """"Transport adapter" that allows us to use TLS v1."""
+
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, ssl_version=ssl.PROTOCOL_TLSv1)
 
 
 def yesterday():
@@ -274,7 +286,9 @@ class BikeAvailability(luigi.Task):
         return luigi.LocalTarget(self.path.format(year=year, month=month, day=day, ts=ts), format=UTF8)
 
     def run(self):
-        resp = requests.get(self.url)
+        session = requests.Session()
+        session.mount(self.url, TLSv1HttpAdapter())
+        resp = session.get(self.url)
         with self.output().open('w') as fobj:
             if self.city == 'bordeaux':
                 fobj.write(resp.content.decode('ISO-8859-1').encode('utf-8').decode('utf-8'))
