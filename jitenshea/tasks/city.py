@@ -195,6 +195,7 @@ class NormalizeStationTable(PostgresQuery):
     host = config['database']['host']
     database = config['database']['dbname']
     user = config['database']['user']
+    port = config['database']['port']
     table = 'station'
     password = None
 
