@@ -64,7 +64,7 @@ def extract_xml_feature(node, namespace='{http://data.bordeaux-metropole.fr/wfs}
             ("etat", get("ETAT")),
             ("nbplaces", int(get('NBPLACES'))),
             ("nbvelos", int(get("NBVELOS"))),
-            ("heure", pd.Timestamp(get("HEURE")))]
+            ("heure", pd.Timestamp(get("MDATE")))]
 
 
 class CreateSchema(PostgresQuery):
