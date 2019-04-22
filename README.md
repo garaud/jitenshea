@@ -9,14 +9,14 @@ In Japanese:
 
 Jitensha (bicycle) + Shea (share) = Jitenshea
 
-Analyze bikes sharing station data some cities where there are Open Data.
+Analyze bikes sharing station data in some cities where there are Open Data.
 
 You have three parts in this project:
 
 * a data pipeline and data processing with [luigi](http://luigi.readthedocs.io/)
   to get, transform and store data
 
-* Some statistics and Machine Learning to analyze the timeseries and predict the
+* Some statistics and Machine Learning to analyze the time series and predict the
   bikes availability for each station.
 
 * Web application to get and visualize some data through a REST API
@@ -25,7 +25,7 @@ You have three parts in this project:
 
 ## Data
 
-Open Data from French cities Bordeaux and Lyon:
+Open Data from the French cities Bordeaux and Lyon:
 
 * [Data Grand Lyon Website](https://data.grandlyon.com/equipements/station-vflov-disponibilitfs-temps-rfel/)
 * [Data Bordeaux Website](https://data.bordeaux-metropole.fr/data.php?themes=10)
@@ -40,8 +40,8 @@ Contributions for other cities are welcomed! e.g. Nantes, Paris, Marseille, etc.
 ## Configuration
 
 A configuration file sample can be found at the root directory
-[config.ini.sample](./config.ini.sample). Copy it into the `jitenshea` directory
-, rename it into `config.ini` and update it.
+[config.ini.sample](./config.ini.sample). Copy it into the `jitenshea` directory, 
+rename it into `config.ini` and update it.
 
 It is used for the database access, some tokens for API, etc.
 
@@ -51,7 +51,7 @@ PostgreSQL database with PostGIS. You must have the `shp2pgsql` command.
 
 All **Python** requirements are specified in the `setup.py` file.
 
-Create a new virtualenv, then do `pip install .` in the project root directory.
+Create a new `virtualenv`, then do `pip install .` in the project root directory.
 
 For **Javascript** and **CSS** dependencies, you have to install `yarn` then launch
 `yarn install`.
