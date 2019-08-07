@@ -99,7 +99,7 @@ api = Api(title='Jitenshea: Bicycle-sharing data analysis',
 
 # Parsers
 station_list_parser = api.parser()
-station_list_parser.add_argument("limit", required=False, type=int, default=100,
+station_list_parser.add_argument("limit", required=False, type=int,
                                  dest='limit', location='args', help='Limit')
 station_list_parser.add_argument("geojson", required=False, default=False, dest='geojson',
                                  location='args', help='GeoJSON format?')

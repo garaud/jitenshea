@@ -211,7 +211,7 @@ def _query_stations(city, limit=20):
     -------
     str
     """
-    return """SELECT id
+    query = """SELECT id
       ,name
       ,address
       ,city
@@ -219,10 +219,10 @@ def _query_stations(city, limit=20):
       ,st_x(geom) as x
       ,st_y(geom) as y
     FROM {schema}.station
-    LIMIT {limit}
-    """.format(schema=city,
-               limit=limit)
-
+    """.format(schema=city)
+    if limit is not None:
+        query += " LIMIT {limit}".format(limit=limit)
+    return query
 
 def daily_query(city):
     """SQL query to get daily transactions according to the city
@@ -440,12 +440,13 @@ def latest_availability(city, limit, geojson):
     join {city}.station as S using(id)
     where P.rank=1
     order by id
-    limit %(limit)s
     """.format(city=city)
+    if limit is not None:
+        query += " limit {limit}".format(limit=limit)
     eng = db()
     # avoid getting the full history
     min_date = datetime.now() - timedelta(days=2)
-    rset = eng.execute(query, min_date=min_date, limit=limit)
+    rset = eng.execute(query, min_date=min_date)
     keys = rset.keys()
     result = [dict(zip(keys, row)) for row in rset]
     latest_date = max(x['timestamp'] for x in result)
@@ -492,8 +493,9 @@ def latest_predictions(city, limit, geojson, freq='1H'):
     join {city}.station as S using(id)
     where P.rank=1
     order by id
-    limit %(limit)s
     """.format(city=city)
+    if limit is not None:
+        query += " limit {limit}".format(limit=limit)
     eng = db()
     # avoid getting the full history
     min_date = datetime.now() - timedelta(days=2)
