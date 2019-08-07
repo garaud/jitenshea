@@ -140,7 +140,7 @@ predict_parser.add_argument("current", required=False, type=inputs.boolean, defa
                             dest="current", location="args",
                             help="With current values?")
 predict_parser.add_argument("predict_values", type=int,
-                            dest="values_num", default=3, location="args",
+                            dest="values_num", default=5, location="args",
                             help="Number of predict values")
 
 hourly_profile_parser = api.parser()

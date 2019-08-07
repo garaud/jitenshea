@@ -139,7 +139,8 @@ $(document).ready(function() {
         }
       },
       xAxis: {
-        type: "datetime"
+        type: "datetime",
+	ordinal: "false"
       },
       time: {
 	useUTC: false
