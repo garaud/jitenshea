@@ -89,8 +89,8 @@ $(document).ready(function() {
   stop.setDate(stop.getDate() + 1);
   start.setDate(start.getDate() - 7);
 
-  start = start.toISOString().substring(0, 10);
-  stop = stop.toISOString().substring(0, 10);
+  start = toLocaleISOString(start).substring(0, 10);
+  stop = toLocaleISOString(stop).substring(0, 10);
 
   var url = cityurl("stationTimeseries")
       + "/timeseries/station/" + station_id
@@ -165,18 +165,35 @@ $(document).ready(function() {
 } );
 
 
+// Get the "right" date string by considering local timezone
+// as date.toISOString() gives the UTC timezone
+// See https://stackoverflow.com/questions/47219556/why-using-the-toisostring-method-on-a-date-object-the-hourly-value-is-an-hour
+function toLocaleISOString(date) {
+  function pad(number) {
+    if (number < 10) {
+      return '0' + number;
+    }
+    return number;
+  }
+  return date.getFullYear() +
+    '-' + pad(date.getMonth() + 1) +
+    '-' + pad(date.getDate()) +
+    'T' + pad(date.getHours()) +
+    ':' + pad(date.getMinutes()) +
+    ':' + pad(date.getSeconds()) ;
+}
+
+
 // Predictions plot
 $(document).ready(function() {
   var station_id = document.getElementById("stationPredictions").dataset.stationId;
   // Only plot seven days.
-  var start = new Date();
   var stop = new Date();
+  var start = new Date(stop);
   start.setHours(start.getHours() - 1);
   stop.setHours(stop.getHours() + 1);
-  start = start.toISOString().substring(0, 16);
-  stop = stop.toISOString().substring(0, 16);
-  console.log(start);
-  console.log(stop);
+  start = toLocaleISOString(start).substring(0, 16);
+  stop = toLocaleISOString(stop).substring(0, 16);
 
   var url = cityurl("stationPredictions")
       + "/predict/station/" + station_id
