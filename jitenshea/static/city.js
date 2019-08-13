@@ -77,11 +77,11 @@ $(document).ready(function() {
 
   var currentLayer = L.geoJSON(null, {
     pointToLayer: pointToLayer
-  }).addTo(map);
+  });
 
   var predictionLayer = L.geoJSON(null, {
     pointToLayer: pointToLayer
-  }).addTo(map);
+  });
 
   var baseMaps = {
     "info": infoLayer,
