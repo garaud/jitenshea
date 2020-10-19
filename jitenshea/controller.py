@@ -4,17 +4,15 @@
 """
 
 
-import daiquiri
-
-from itertools import groupby
 from datetime import datetime, timedelta
+from itertools import groupby
 from collections import namedtuple
 
 import pandas as pd
+import daiquiri
 
-from jitenshea.stats import find_cluster
 from jitenshea.iodb import db
-
+from jitenshea.stats import find_cluster
 
 logger = daiquiri.getLogger(__name__)
 
@@ -62,6 +60,7 @@ def processing_timeseries(rset):
                        'name': group[0]['name'],
                        'nb_stands': group[0]['nb_stands'],
                        "ts": [x['timestamp'] for x in group],
+                       "status": [x['status'] for x in group],
                        'available_bikes': [x['available_bikes'] for x in group],
                        'available_stands': [x['available_stands'] for x in group]})
     return {"data": values}
