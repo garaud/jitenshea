@@ -107,6 +107,23 @@ def test_api_timeseries(client):
     assert resp.status_code == 200
 
 
+def test_api_timeseries_features(client):
+    start = yesterday().strftime(ISO_DATE)
+    stop = date.today().strftime(ISO_DATE)
+    resp = client.get('/api/bordeaux/timeseries/station/102,58',
+                      query_string={"start": start, "stop": stop})
+    data = resp.json["data"]
+    assert len(data) > 0
+    features = data[0].keys()
+    assert "id" in features
+    assert "name" in features
+    assert "status" in features
+    assert "nb_stands" in features
+    assert "ts" in features
+    assert "available_bikes" in features
+    assert "available_stands" in features
+
+
 def test_api_hourly_profile(client):
     date = yesterday().strftime(ISO_DATE)
     resp = client.get('/api/bordeaux/profile/hourly/station/93,33',
