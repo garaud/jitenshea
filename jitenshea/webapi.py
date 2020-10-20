@@ -49,7 +49,7 @@ class ListConverter(BaseConverter):
         return value.split(',')
 
     def to_url(self, values):
-        return ','.join(BaseConverter.to_url(value)
+        return ','.join(super(ListConverter, self).to_url(value=value)
                         for value in values)
 
 app.url_map.converters['list'] = ListConverter
@@ -216,8 +216,8 @@ class CityDailyStation(Resource):
 
 @api.route("/<string:city>/daily/station")
 class CityDailyStationList(Resource):
-    @api.doc(parser=daily_list_parser,
-             description="Daily transactions for all stations")
+    @api.expect(parser=daily_list_parser)
+    @api.doc(description="Daily transactions for all stations")
     def get(self, city):
         check_city(city)
         args = daily_list_parser.parse_args()
@@ -233,8 +233,8 @@ class CityDailyStationList(Resource):
 
 @api.route("/<string:city>/timeseries/station/<list:ids>")
 class CityTimeseriesStation(Resource):
-    @api.doc(parser=timeseries_parser,
-             description="Bicycle station(s) timeseries")
+    @api.expect(parser=timeseries_parser)
+    @api.doc(description="Bicycle station(s) timeseries")
     def get(self, city, ids):
         check_city(city)
         args = timeseries_parser.parse_args()
@@ -248,8 +248,8 @@ class CityTimeseriesStation(Resource):
 
 @api.route("/<string:city>/predict/station/<list:ids>")
 class PredictStation(Resource):
-    @api.doc(parser=predict_parser,
-             description="Bicycle station(s) prediction")
+    @api.expect(parser=predict_parser)
+    @api.doc(description="Bicycle station(s) prediction")
     def get(self, city, ids):
         check_city(city)
         args = predict_parser.parse_args()
@@ -266,8 +266,8 @@ class PredictStation(Resource):
 
 @api.route("/<string:city>/predict/station")
 class PredictStationList(Resource):
-    @api.doc(parser=station_list_parser,
-             description="Bicycle stations prediction")
+    @api.expect(parser=station_list_parser)
+    @api.doc(description="Bicycle stations prediction")
     def get(self, city):
         check_city(city)
         args = station_list_parser.parse_args()
@@ -279,8 +279,8 @@ class PredictStationList(Resource):
 
 @api.route("/<string:city>/profile/hourly/station/<list:ids>")
 class CityHourlyStation(Resource):
-    @api.doc(parser=hourly_profile_parser,
-             description="Bicycle station(s) hourly profile")
+    @api.expect(parser=station_list_parser)
+    @api.doc(description="Bicycle station(s) hourly profile")
     def get(self, city, ids):
         check_city(city)
         args = hourly_profile_parser.parse_args()
@@ -294,8 +294,8 @@ class CityHourlyStation(Resource):
 
 @api.route("/<string:city>/profile/daily/station/<list:ids>")
 class CityDailyStation(Resource):
-    @api.doc(parser=daily_profile_parser,
-             description="Bicycle station(s) daily profile")
+    @api.expect(parser=station_list_parser)
+    @api.doc(description="Bicycle station(s) daily profile")
     def get(self, city, ids):
         check_city(city)
         args = daily_profile_parser.parse_args()
@@ -309,8 +309,8 @@ class CityDailyStation(Resource):
 
 @api.route("/<string:city>/clustering/stations")
 class CityClusteredStation(Resource):
-    @api.doc(parser=clustering_parser,
-             description="Clustered stations according to K-means algorithm")
+    @api.expect(parser=station_list_parser)
+    @api.doc(description="Clustered stations according to K-means algorithm")
     def get(self, city):
         check_city(city)
         args = clustering_parser.parse_args()
@@ -333,8 +333,8 @@ class CityClusterCentroids(Resource):
 
 @api.route("/<string:city>/clustering/centroids")
 class CityClusterCentroids(Resource):
-    @api.doc(parser=clustering_parser,
-             description="Centroids of clusters computed with a K-means algorithm")
+    @api.expect(parser=station_list_parser)
+    @api.doc(description="Centroids of clusters computed with a K-means algorithm")
     def get(self, city):
         check_city(city)
         args = clustering_parser.parse_args()
