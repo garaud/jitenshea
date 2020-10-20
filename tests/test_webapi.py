@@ -2,10 +2,8 @@ import json
 from datetime import date, datetime, timedelta
 
 import pytest
-
+from jitenshea.webapi import ISO_DATE, ISO_DATETIME, api
 from jitenshea.webapp import app
-from jitenshea.webapi import api, ISO_DATE, ISO_DATETIME
-
 
 app.config['TESTING'] = True
 api.init_app(app)
@@ -156,7 +154,7 @@ def test_api_prediction(client):
     assert resp.status_code == 200
     data = resp.get_json()
     # 3 values by default
-    assert len(data) == 3
+    assert len(data) == 5
     assert 'nb_bikes' in data[0]
     assert data[0]['at'] == '1H'
 
@@ -183,7 +181,7 @@ def test_api_latest_prediction(client):
     assert resp.status_code == 200
     data = resp.get_json()['data']
     date = resp.get_json()['date']
-    assert len(data) == 100
+    assert len(data) >= 100
     # in GeoJSON
     resp = client.get('/api/bordeaux/predict/station',
                       query_string={'limit': 5, 'geojson': True})
