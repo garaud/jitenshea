@@ -7,9 +7,8 @@ with open("README.md") as fobj:
     LONG_DESCRIPTION = fobj.read()
 
 INSTALL_REQUIRES = ["luigi", "numpy", "pandas", "requests", "psycopg2-binary",
-                    'sqlalchemy', 'lxml', 'xgboost', 'daiquiri', 'Flask==1.0.2',
-                    'flask-restplus==0.12.1', 'sh', 'seaborn', 'scikit-learn',
-                    'tables']
+                    'sqlalchemy', 'lxml', 'xgboost', 'daiquiri',
+                    'flask-restx', 'sh', 'seaborn', 'scikit-learn', 'tables']
 
 
 setuptools.setup(
@@ -20,7 +19,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
-    extras_require={'dev': ['pytest', 'pytest-sugar', 'ipython', 'ipdb']},
+    extras_require={'dev': ['pytest', 'pytest-sugar', 'ipython', 'ipdb', 'flake8', 'isort']},
 
     author="Damien Garaud",
     author_email='damien.garaud@gmail.com',
