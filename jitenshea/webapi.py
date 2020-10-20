@@ -3,21 +3,17 @@
 """Flask API for Jitenshea (Bicycle-sharing data)
 """
 
-import daiquiri
-
 from datetime import date, datetime
-from dateutil.parser import parse
 
-from werkzeug.routing import BaseConverter
-
+import daiquiri
 from flask import jsonify
 from flask.json import JSONEncoder
-from flask_restplus import inputs
-from flask_restplus import Resource, Api
+from flask_restx import Api, Resource, inputs
+from dateutil.parser import parse
+from werkzeug.routing import BaseConverter
 
 from jitenshea import controller
 from jitenshea.webapp import app
-
 
 ISO_DATE = '%Y-%m-%d'
 ISO_DATETIME = '%Y-%m-%dT%H:%M:%S'
