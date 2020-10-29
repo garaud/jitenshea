@@ -331,10 +331,15 @@ class AvailabilityToCSV(luigi.Task):
                     lambda x: 'open' if x == 'CONNECTEE' else 'closed')
             elif self.city == 'lyon':
                 data = json.load(fobj)
-                df = pd.DataFrame(data['values'], columns=data['fields'])
+                features = [x["properties"] for x in data["features"]]
+                df = pd.DataFrame(features)
                 status_key = config[self.city]['feature_status']
                 df[status_key] = df[status_key].apply(
                     lambda x: 'open' if x == 'OPEN' else 'closed')
+                stands = config[self.city]['feature_avl_stands']
+                bikes = config[self.city]['feature_avl_bikes']
+                df[stands] = df[stands].replace("", np.nan).astype(np.float)
+                df[bikes] = df[bikes].replace("", np.nan).astype(np.float)
             else:
                 raise ValueError(("{} is an unknown city.".format(self.city)))
         df = df[[config[self.city]['feature_avl_id'],
@@ -344,7 +349,12 @@ class AvailabilityToCSV(luigi.Task):
                  config[self.city]['feature_status']]]
         df.columns = ["id", "timestamp", "available_stands",
                       "available_bikes", "status"]
-        df = df.sort_values(by="id")
+        df = df.sort_values(by=["id", "timestamp"])
+        df["available_stands"].fillna(method='bfill', inplace=True)
+        df["available_bikes"].fillna(method='bfill', inplace=True)
+        df["available_stands"] = df["available_stands"].astype(np.int)
+        df["available_bikes"] = df["available_bikes"].astype(np.int)
+        df.to_csv("/home/dag/tmp/velov.csv")
         with self.output().open('w') as fobj:
             df.to_csv(fobj, index=False)
 
