@@ -354,7 +354,6 @@ class AvailabilityToCSV(luigi.Task):
         df["available_bikes"].fillna(method='bfill', inplace=True)
         df["available_stands"] = df["available_stands"].astype(np.int)
         df["available_bikes"] = df["available_bikes"].astype(np.int)
-        df.to_csv("/home/dag/tmp/velov.csv")
         with self.output().open('w') as fobj:
             df.to_csv(fobj, index=False)
 
