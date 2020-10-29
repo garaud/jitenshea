@@ -12,33 +12,28 @@ Supported cities:
 """
 
 import os
+import ssl
 import json
 import zipfile
-import ssl
-from urllib3.poolmanager import PoolManager
+from datetime import date
 from datetime import datetime as dt
-from datetime import date, timedelta
-
-from lxml import etree
-
-import pandas as pd
+from datetime import timedelta
 
 import sh
-
-import requests
-from requests.adapters import HTTPAdapter
-
 import luigi
-from luigi.contrib.postgres import CopyToTable, PostgresQuery
-from luigi.format import UTF8, MixedUnicodeBytes
-
+import numpy as np
+import pandas as pd
+import requests
+from lxml import etree
 from jitenshea import config
+from luigi.format import UTF8, MixedUnicodeBytes
 from jitenshea.iodb import db, psql_args, shp2pgsql_args
+from jitenshea.stats import (load_model, compute_clusters, compute_geo_clusters, train_prediction_model,
+                             predict_bike_availability)
+from requests.adapters import HTTPAdapter
+from urllib3.poolmanager import PoolManager
+from luigi.contrib.postgres import CopyToTable, PostgresQuery
 from jitenshea.tasks.controller import latest_station_timewindow
-from jitenshea.stats import (compute_clusters, train_prediction_model,
-                             compute_geo_clusters,
-                             load_model, predict_bike_availability)
-
 
 _HERE = os.path.abspath(os.path.dirname(__file__))
 DATADIR = config["main"]["datadir"]
@@ -46,8 +41,8 @@ DATADIR = config["main"]["datadir"]
 BORDEAUX_STATION_URL = 'https://data.bordeaux-metropole.fr/files.php?gid=43&format=2'
 BORDEAUX_BIKEAVAILABILITY_URL = 'https://data.bordeaux-metropole.fr/wfs?service=wfs&request=GetFeature&version=2.0.0&key={key}&typename=CI_VCUB_P'
 
-LYON_STATION_URL = 'https://download.data.grandlyon.com/wfs/grandlyon?service=wfs&request=GetFeature&version=2.0.0&SRSNAME=EPSG:4326&outputFormat=SHAPEZIP&typename=pvo_patrimoine_voirie.pvostationvelov'
-LYON_BIKEAVAILABILITY_URL = 'https://download.data.grandlyon.com/ws/rdata/jcd_jcdecaux.jcdvelov/all.json'
+LYON_STATION_URL = 'https://data.grandlyon.com/api/query/download/wfs/rdata?service=wfs&version=2.0.0&request=GetFeature&typename=pvo_patrimoine_voirie.pvocomptagevelo&srsname=epsg:4326&outputFormat=application/json; subtype=geojson'
+LYON_BIKEAVAILABILITY_URL = 'https://data.grandlyon.com/api/query/download/wfs/rdata?service=wfs&version=2.0.0&request=GetFeature&typename=jcd_jcdecaux.jcdvelov&srsname=epsg:4326&outputFormat=application/json; subtype=geojson'
 
 
 class TLSv1HttpAdapter(HTTPAdapter):
