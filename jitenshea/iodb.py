@@ -11,6 +11,8 @@ from jitenshea import config
 
 
 logger = daiquiri.getLogger(__name__)
+# Engine SQLAlchemy connexion.
+eng = None
 
 
 def psql_args():
@@ -23,6 +25,7 @@ def psql_args():
     if 'password' in config['database'] and config['database']['password'] is not None:
         psql.insert(0, 'PGPASSWORD={pwd}'.format(pwd=config['database']['password']))
     return psql
+
 
 def shp2pgsql_args(projection, filename, tablename, encoding=None):
     """Return the arguments for the command shp2pgsql
@@ -46,18 +49,23 @@ def shp2pgsql_args(projection, filename, tablename, encoding=None):
     shp2pgsql.extend([filename, tablename])
     return shp2pgsql
 
+
 def db():
     """Return a SQLAlchemy engine with Postgres connection parameters
     """
+    global eng
+    if eng is not None:
+        return eng
     database = config['database']
     if database.get('password') is not None:
         url = 'postgresql://{user}:{password}@{host}/{dbname}'
-        return create_engine(url.format(user=database['user'],
-                                        password=database['password'],
-                                        host=database['host'],
-                                        dbname=database['dbname']))
+        eng = create_engine(url.format(user=database['user'],
+                                       password=database['password'],
+                                       host=database['host'],
+                                       dbname=database['dbname']))
     else:
         url = 'postgresql://{user}@{host}/{dbname}'
-        return create_engine(url.format(user=database['user'],
-                                        host=database['host'],
-                                        dbname=database['dbname']))
+        eng = create_engine(url.format(user=database['user'],
+                                       host=database['host'],
+                                       dbname=database['dbname']))
+    return eng
