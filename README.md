@@ -5,6 +5,10 @@
 
 ![logo](./images/jitenshea-logo.png)
 
+It's an archived repo.
+
+**MOVED TO** https://gitlab.com/Oslandia/jitenshea
+
 In Japanese:
 
 Jitensha (bicycle) + Shea (share) = Jitenshea
